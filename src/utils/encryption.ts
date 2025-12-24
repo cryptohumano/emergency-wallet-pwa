@@ -12,14 +12,33 @@ const SALT_LENGTH = 32
 const ITERATIONS = 100000 // PBKDF2 iterations
 
 /**
+ * Verifica que Web Crypto API esté disponible
+ */
+function ensureCryptoAvailable(): void {
+  if (typeof crypto === 'undefined') {
+    throw new Error('Web Crypto API no está disponible. Asegúrate de usar HTTPS o localhost.')
+  }
+  
+  if (!crypto.subtle) {
+    throw new Error('crypto.subtle no está disponible. Asegúrate de usar HTTPS o localhost.')
+  }
+  
+  if (!crypto.getRandomValues) {
+    throw new Error('crypto.getRandomValues no está disponible.')
+  }
+}
+
+/**
  * Deriva una clave de encriptación desde una contraseña usando PBKDF2
  */
 async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
+  ensureCryptoAvailable()
+  
   // Convertir contraseña a bytes
   const passwordBytes = new TextEncoder().encode(password)
   
   // Importar la contraseña como clave base para PBKDF2
-  const baseKey = await crypto.subtle.importKey(
+  const baseKey = await crypto.subtle!.importKey(
     'raw',
     passwordBytes,
     { name: 'PBKDF2' },
@@ -28,7 +47,7 @@ async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey>
   )
   
   // Derivar la clave AES-GCM usando PBKDF2
-  return crypto.subtle.deriveKey(
+  return crypto.subtle!.deriveKey(
     {
       name: 'PBKDF2',
       salt: salt,
@@ -46,7 +65,8 @@ async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey>
  * Genera bytes aleatorios usando Web Crypto API
  */
 function randomBytes(length: number): Uint8Array {
-  return crypto.getRandomValues(new Uint8Array(length))
+  ensureCryptoAvailable()
+  return crypto.getRandomValues!(new Uint8Array(length))
 }
 
 /**
@@ -59,7 +79,7 @@ export async function encrypt(plaintext: string, password: string): Promise<stri
   const key = await deriveKey(password, salt)
   const data = new TextEncoder().encode(plaintext)
   
-  const encrypted = await crypto.subtle.encrypt(
+  const encrypted = await crypto.subtle!.encrypt(
     {
       name: ALGORITHM,
       iv: iv,
@@ -90,7 +110,8 @@ export async function decrypt(encryptedHex: string, password: string): Promise<s
   const key = await deriveKey(password, salt)
   
   try {
-    const decrypted = await crypto.subtle.decrypt(
+    ensureCryptoAvailable()
+    const decrypted = await crypto.subtle!.decrypt(
       {
         name: ALGORITHM,
         iv: iv,
@@ -132,7 +153,8 @@ export async function decryptWithKey(encryptedHex: string, key: CryptoKey): Prom
   const encrypted = combined.slice(SALT_LENGTH + IV_LENGTH)
   
   try {
-    const decrypted = await crypto.subtle.decrypt(
+    ensureCryptoAvailable()
+    const decrypted = await crypto.subtle!.decrypt(
       {
         name: ALGORITHM,
         iv: iv,

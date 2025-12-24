@@ -1,41 +1,103 @@
-import { Link, useLocation } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
-import { Home, Wallet, Send, FileText, MoreHorizontal } from 'lucide-react'
+import { Home, Wallet, Send, FileText, Settings, Menu, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet'
 
 const navigation = [
-  { name: 'Home', href: '/', icon: Home },
-  { name: 'Cuentas', href: '/accounts', icon: Wallet },
-  { name: 'Enviar', href: '/send', icon: Send },
-  { name: 'Documentos', href: '/documents', icon: FileText },
-  { name: 'Más', href: '/settings', icon: MoreHorizontal },
+  { name: 'Inicio', href: '/', icon: Home, description: 'Ver resumen de cuentas y balances' },
+  { name: 'Cuentas', href: '/accounts', icon: Wallet, description: 'Gestionar tus cuentas' },
+  { name: 'Enviar', href: '/send', icon: Send, description: 'Enviar tokens' },
+  { name: 'Documentos', href: '/documents', icon: FileText, description: 'Gestionar documentos' },
+  { name: 'Configuración', href: '/settings', icon: Settings, description: 'Ajustes y preferencias' },
 ]
 
 export function BottomNav() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const [isOpen, setIsOpen] = useState(false)
+
+  const handleNavigation = (href: string) => {
+    navigate(href)
+    setIsOpen(false)
+  }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
-      <div className="flex items-center justify-around h-16">
-        {navigation.map((item) => {
-          const isActive = location.pathname === item.href
-          return (
-            <Link
-              key={item.name}
-              to={item.href}
-              className={cn(
-                'flex flex-col items-center justify-center flex-1 min-w-0 px-2 py-1 transition-colors',
-                isActive
-                  ? 'text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
+    <>
+      {/* FAB Button - Posicionado para fácil acceso con el pulgar */}
+      <div className="fixed bottom-4 right-4 md:hidden z-50 safe-area-inset-bottom">
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+          <SheetTrigger asChild>
+            <Button
+              size="lg"
+              className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-primary text-primary-foreground hover:bg-primary/90"
+              aria-label="Abrir menú de navegación"
             >
-              <item.icon className={cn('h-5 w-5', isActive && 'text-primary')} />
-              <span className="text-xs mt-1 truncate">{item.name}</span>
-            </Link>
-          )
-        })}
+              {isOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="bottom" className="h-[70vh] rounded-t-2xl">
+            <SheetHeader>
+              <SheetTitle>Navegación</SheetTitle>
+              <SheetDescription>
+                Selecciona una opción para navegar
+              </SheetDescription>
+            </SheetHeader>
+            <div className="mt-6 space-y-2">
+              {navigation.map((item) => {
+                const isActive = location.pathname === item.href
+                return (
+                  <button
+                    key={item.name}
+                    onClick={() => handleNavigation(item.href)}
+                    className={cn(
+                      'w-full flex items-center gap-4 p-4 rounded-lg transition-colors text-left',
+                      isActive
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted hover:bg-muted/80 text-foreground'
+                    )}
+                  >
+                    <item.icon className={cn(
+                      'h-6 w-6 flex-shrink-0',
+                      isActive ? 'text-primary-foreground' : 'text-muted-foreground'
+                    )} />
+                    <div className="flex-1 min-w-0">
+                      <div className={cn(
+                        'font-medium',
+                        isActive ? 'text-primary-foreground' : 'text-foreground'
+                      )}>
+                        {item.name}
+                      </div>
+                      <div className={cn(
+                        'text-sm mt-0.5',
+                        isActive ? 'text-primary-foreground/80' : 'text-muted-foreground'
+                      )}>
+                        {item.description}
+                      </div>
+                    </div>
+                    {isActive && (
+                      <div className="h-2 w-2 rounded-full bg-primary-foreground" />
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
-    </nav>
+    </>
   )
 }
 

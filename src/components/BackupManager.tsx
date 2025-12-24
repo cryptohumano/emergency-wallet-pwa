@@ -57,10 +57,24 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
     setSuccess(null)
 
     try {
+      console.log('[BackupManager] Iniciando descarga de backup...')
       await downloadBackup()
-      setSuccess('Backup exportado exitosamente')
+      console.log('[BackupManager] ✅ Backup descargado exitosamente')
+      setSuccess('Backup exportado exitosamente. El archivo debería descargarse automáticamente.')
+      
+      // Mostrar información adicional en consola para debugging
+      console.log('[BackupManager] Si no se descargó el archivo, verifica:')
+      console.log('  1. Que tu navegador permita descargas automáticas')
+      console.log('  2. Que no haya bloqueadores de pop-ups activos')
+      console.log('  3. La consola del navegador para más detalles')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al exportar backup')
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido al exportar backup'
+      console.error('[BackupManager] ❌ Error:', err)
+      console.error('[BackupManager] Detalles:', {
+        message: errorMessage,
+        stack: err instanceof Error ? err.stack : undefined
+      })
+      setError(`Error al exportar backup: ${errorMessage}. Revisa la consola para más detalles.`)
     } finally {
       setIsExporting(false)
     }

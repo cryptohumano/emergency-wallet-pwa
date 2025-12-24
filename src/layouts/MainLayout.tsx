@@ -16,7 +16,7 @@ export default function MainLayout() {
         {isUnlocked && <Header />}
         <div className="flex flex-1 overflow-hidden">
           {!isMobile && isUnlocked && <Sidebar />}
-          <main className={`flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 ${!isMobile && isUnlocked ? 'md:ml-64' : ''} ${isMobile && isUnlocked ? 'pb-24' : ''}`} style={{ scrollBehavior: 'smooth' }}>
+          <main className={`flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 ${!isMobile && isUnlocked ? 'md:ml-64' : ''} ${isMobile && isUnlocked ? 'pb-20' : ''}`} style={{ scrollBehavior: 'smooth' }}>
             <Outlet />
           </main>
         </div>

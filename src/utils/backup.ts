@@ -147,21 +147,51 @@ export async function exportBackup(): Promise<BackupData> {
  */
 export async function downloadBackup(): Promise<void> {
   try {
+    console.log('[Backup] Iniciando exportación...')
     const backup = await exportBackup()
+    console.log('[Backup] Exportación completada, creando archivo...')
+    
     const json = JSON.stringify(backup, null, 2)
     const blob = new Blob([json], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
+    
+    console.log('[Backup] Blob creado, tamaño:', blob.size, 'bytes')
+    
     const link = document.createElement('a')
     link.href = url
     link.download = `aura-wallet-backup-${new Date().toISOString().split('T')[0]}.json`
+    link.style.display = 'none'
+    
     document.body.appendChild(link)
+    console.log('[Backup] Link agregado al DOM, iniciando descarga...')
+    
+    // En dispositivos móviles, puede que necesitemos un pequeño delay
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
     link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-    console.log('[Backup] ✅ Archivo descargado')
+    
+    // Esperar un momento antes de limpiar
+    setTimeout(() => {
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+      console.log('[Backup] ✅ Archivo descargado y recursos liberados')
+    }, 1000)
+    
+    // Verificar si estamos en un entorno que soporta descargas
+    if (typeof window !== 'undefined' && 'download' in document.createElement('a')) {
+      console.log('[Backup] ✅ Navegador soporta descargas')
+    } else {
+      console.warn('[Backup] ⚠️ El navegador puede no soportar descargas automáticas')
+    }
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
     console.error('[Backup] ❌ Error al descargar backup:', error)
-    throw error
+    console.error('[Backup] Detalles del error:', {
+      message: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
+    })
+    throw new Error(`Error al descargar backup: ${errorMessage}`)
   }
 }
 
