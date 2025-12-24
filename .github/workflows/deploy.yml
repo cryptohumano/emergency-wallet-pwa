@@ -66,6 +66,12 @@ jobs:
             exit 1
           fi
 
+      - name: Disable Jekyll
+        run: |
+          echo "Creating .nojekyll file to disable Jekyll processing..."
+          touch dist/.nojekyll
+          echo "✅ .nojekyll file created"
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
