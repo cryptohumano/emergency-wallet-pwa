@@ -28,10 +28,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'yarn'
 
       - name: Setup Corepack
-        run: corepack enable
+        run: |
+          corepack enable
+          corepack prepare yarn@4.6.0 --activate
+          echo "✅ Corepack enabled and Yarn 4.6.0 prepared"
+          yarn --version
 
       - name: Install dependencies
         run: yarn install --immutable
