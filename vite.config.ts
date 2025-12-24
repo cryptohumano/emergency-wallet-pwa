@@ -98,7 +98,27 @@ export default defineConfig({
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       base: getBase(),
       scope: getBase(),
-      filename: 'manifest.webmanifest',
+      strategies: 'generateSW',
+      workbox: {
+        swDest: 'sw.js', // Nombre explícito del Service Worker
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        navigateFallback: basePath === '/' ? '/index.html' : basePath + 'index.html',
+        navigateFallbackDenylist: [/^\/_/, /\/[^/?]+\.[^/]+$/],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB (aumentado de 2 MB por defecto)
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/.*/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'external-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 // 24 horas
+              }
+            }
+          }
+        ]
+      },
       manifest: {
         name: 'Aura Wallet',
         short_name: 'Aura Wallet',
@@ -166,25 +186,6 @@ export default defineConfig({
       devOptions: {
         enabled: true,
         type: 'module',
-      },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-        navigateFallback: basePath === '/' ? '/index.html' : basePath + 'index.html',
-        navigateFallbackDenylist: [/^\/_/, /\/[^/?]+\.[^/]+$/],
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB (aumentado de 2 MB por defecto)
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/.*/,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'external-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 // 24 horas
-              }
-            }
-          }
-        ]
       }
     })
   ],
