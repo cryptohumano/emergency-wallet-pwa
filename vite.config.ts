@@ -100,8 +100,7 @@ export default defineConfig({
       scope: getBase(),
       strategies: 'generateSW',
       workbox: {
-        swDest: 'sw.js', // Nombre explícito del Service Worker
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
         navigateFallback: basePath === '/' ? '/index.html' : basePath + 'index.html',
         navigateFallbackDenylist: [/^\/_/, /\/[^/?]+\.[^/]+$/],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB (aumentado de 2 MB por defecto)

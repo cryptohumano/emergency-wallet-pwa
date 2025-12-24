@@ -20,6 +20,10 @@ import Attestations from '@/pages/Attestations'
 import Settings from '@/pages/Settings'
 import Identity from '@/pages/Identity'
 
+// Obtener el base path desde import.meta.env.BASE_URL (configurado por Vite)
+// En desarrollo será '/', en producción será '/aura-pwa/' para GitHub Pages
+const basename = import.meta.env.BASE_URL || '/'
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -122,5 +126,7 @@ export const router = createBrowserRouter([
       },
     ],
   },
-])
+], {
+  basename: basename,
+})
 
