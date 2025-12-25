@@ -33,7 +33,13 @@ export function BottomNav() {
   return (
     <>
       {/* FAB Button - Posicionado para fácil acceso con el pulgar */}
-      <div className="fixed bottom-4 right-4 md:hidden z-50 safe-area-inset-bottom">
+      <div 
+        className="fixed bottom-4 right-4 md:hidden z-[100]"
+        style={{
+          bottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))',
+          right: 'max(1rem, env(safe-area-inset-right, 1rem))',
+        }}
+      >
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
             <Button
@@ -48,7 +54,13 @@ export function BottomNav() {
               )}
             </Button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="h-[70vh] rounded-t-2xl">
+          <SheetContent 
+            side="bottom" 
+            className="h-[70vh] rounded-t-2xl"
+            style={{
+              paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))',
+            }}
+          >
             <SheetHeader>
               <SheetTitle>Navegación</SheetTitle>
               <SheetDescription>

@@ -144,6 +144,7 @@ export async function exportBackup(): Promise<BackupData> {
 
 /**
  * Descarga el backup como archivo JSON
+ * En dispositivos móviles, intenta usar la Share API primero
  */
 export async function downloadBackup(): Promise<void> {
   try {
@@ -153,14 +154,41 @@ export async function downloadBackup(): Promise<void> {
     
     const json = JSON.stringify(backup, null, 2)
     const blob = new Blob([json], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
+    const filename = `aura-wallet-backup-${new Date().toISOString().split('T')[0]}.json`
     
     console.log('[Backup] Blob creado, tamaño:', blob.size, 'bytes')
     
+    // Intentar usar Share API en dispositivos móviles (iOS/Android)
+    if (navigator.share && navigator.canShare) {
+      try {
+        const file = new File([blob], filename, { type: 'application/json' })
+        
+        // Verificar si podemos compartir el archivo
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: 'Aura Wallet Backup',
+            text: 'Respaldo de mi wallet Aura',
+          })
+          console.log('[Backup] ✅ Backup compartido usando Share API')
+          return
+        }
+      } catch (shareError) {
+        // Si falla Share API, continuar con el método tradicional
+        console.log('[Backup] Share API no disponible o falló, usando método tradicional:', shareError)
+      }
+    }
+    
+    // Método tradicional: crear link de descarga
+    const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `aura-wallet-backup-${new Date().toISOString().split('T')[0]}.json`
+    link.download = filename
     link.style.display = 'none'
+    
+    // Agregar atributos para mejor compatibilidad en móviles
+    link.setAttribute('download', filename)
+    link.setAttribute('target', '_blank')
     
     document.body.appendChild(link)
     console.log('[Backup] Link agregado al DOM, iniciando descarga...')
@@ -168,14 +196,23 @@ export async function downloadBackup(): Promise<void> {
     // En dispositivos móviles, puede que necesitemos un pequeño delay
     await new Promise(resolve => setTimeout(resolve, 100))
     
+    // Intentar click programático
     link.click()
+    
+    // En algunos navegadores móviles, necesitamos un enfoque diferente
+    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      // iOS: abrir en nueva ventana
+      window.open(url, '_blank')
+    }
     
     // Esperar un momento antes de limpiar
     setTimeout(() => {
-      document.body.removeChild(link)
+      if (document.body.contains(link)) {
+        document.body.removeChild(link)
+      }
       URL.revokeObjectURL(url)
       console.log('[Backup] ✅ Archivo descargado y recursos liberados')
-    }, 1000)
+    }, 2000)
     
     // Verificar si estamos en un entorno que soporta descargas
     if (typeof window !== 'undefined' && 'download' in document.createElement('a')) {
