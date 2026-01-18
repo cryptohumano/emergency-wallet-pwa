@@ -35,7 +35,7 @@ export function BottomNav() {
     <>
       {/* FAB Button - Posicionado para fácil acceso con el pulgar */}
       <div 
-        className="fixed bottom-4 right-4 md:hidden z-[100]"
+        className="fixed bottom-4 right-4 md:hidden z-[100] pointer-events-auto"
         style={{
           bottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))',
           right: 'max(1rem, env(safe-area-inset-right, 1rem))',
@@ -57,7 +57,7 @@ export function BottomNav() {
           </SheetTrigger>
           <SheetContent 
             side="bottom" 
-            className="h-[70vh] rounded-t-2xl"
+            className="h-[70vh] rounded-t-2xl overflow-y-auto"
             style={{
               paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))',
             }}
@@ -68,7 +68,7 @@ export function BottomNav() {
                 Selecciona una opción para navegar
               </SheetDescription>
             </SheetHeader>
-            <div className="mt-6 space-y-2">
+            <div className="mt-6 space-y-2 pb-4">
               {navigation.map((item) => {
                 const isActive = location.pathname === item.href
                 return (
