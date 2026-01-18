@@ -103,25 +103,28 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
         navigateFallback: basePath === '/' ? '/index.html' : basePath + 'index.html',
         navigateFallbackDenylist: [/^\/_/, /\/[^/?]+\.[^/]+$/],
+        // Excluir servicios de mapas del procesamiento de Workbox completamente
+        // Esto previene que Workbox intente procesar estas URLs
+        navigateFallbackAllowlist: undefined,
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB (aumentado de 2 MB por defecto)
         runtimeCaching: [
           {
-            // Excluir servicios de mapas del cache (pueden fallar y causar problemas)
+            // Regla específica para staticmap - NetworkOnly para que no intente cachear
             // Esta regla debe ir ANTES de la regla general para tener prioridad
-            // Usamos NetworkFirst con timeout corto para evitar errores persistentes
             urlPattern: /^https:\/\/.*staticmap\.openstreetmap\.(de|org|fr)\/.*/,
-            handler: 'NetworkFirst',
+            handler: 'NetworkOnly',
             options: {
-              cacheName: 'map-cache',
-              networkTimeoutSeconds: 10, // Timeout de 10 segundos
-              // No cachear respuestas fallidas
-              cacheableResponse: {
-                statuses: [200], // Solo cachear respuestas exitosas
-              },
+              // No cachear nada, solo intentar la red
+              // Si falla, el error se propaga normalmente al componente sin que Workbox interfiera
             }
           },
           {
-            urlPattern: /^https:\/\/.*/,
+            // Regla general para otros recursos externos
+            // Excluir explícitamente staticmap para que use la regla anterior (NetworkOnly)
+            urlPattern: ({ url }: { url: URL }) => {
+              // Solo procesar URLs HTTPS que NO sean de staticmap
+              return url.protocol === 'https:' && !url.hostname.includes('staticmap.openstreetmap')
+            },
             handler: 'NetworkFirst',
             options: {
               cacheName: 'external-cache',
@@ -129,7 +132,6 @@ export default defineConfig({
                 maxEntries: 50,
                 maxAgeSeconds: 60 * 60 * 24 // 24 horas
               },
-              // Excluir staticmap de la regla general
               matchOptions: {
                 ignoreSearch: false,
               }

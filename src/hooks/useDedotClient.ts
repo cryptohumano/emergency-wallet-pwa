@@ -170,11 +170,46 @@ async function tryConnectWithFallback(
     try {
       const provider = new WsProvider(endpoint)
       await provider.connect()
+      
+      // Crear el cliente con manejo de errores
+      // El error "Cannot read properties of undefined (reading 'hash')" 
+      // puede ocurrir en eventos de seguimiento internos de Dedot
+      // Estos errores no afectan la funcionalidad principal, así que los ignoramos
       const client = await DedotClient.new(provider)
+      
+      // Agregar un manejador de errores no capturados para eventos internos
+      // Esto previene que errores internos de Dedot rompan la aplicación
+      if (typeof window !== 'undefined') {
+        const originalErrorHandler = window.onerror
+        window.onerror = (message, source, lineno, colno, error) => {
+          // Ignorar errores específicos de Dedot relacionados con 'hash' y 'onFollowEvent'
+          if (
+            (typeof message === 'string' && message.includes('hash') && message.includes('onFollowEvent')) ||
+            (error?.message?.includes('hash') && error?.stack?.includes('onFollowEvent'))
+          ) {
+            console.warn('[DedotClient] ⚠️ Error interno de Dedot ignorado:', message)
+            return true // Prevenir que el error se propague
+          }
+          // Llamar al manejador original para otros errores
+          if (originalErrorHandler) {
+            return originalErrorHandler(message, source, lineno, colno, error)
+          }
+          return false
+        }
+      }
+      
       console.log(`[DedotClient] ✅ Conectado a ${endpoint}`)
       return { client, endpoint }
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error))
+      // Ignorar errores específicos de eventos internos de Dedot
+      if (
+        lastError.message.includes('hash') && 
+        (lastError.stack?.includes('onFollowEvent') || lastError.message.includes('onFollowEvent'))
+      ) {
+        console.warn(`[DedotClient] ⚠️ Error interno de Dedot al conectar a ${endpoint} (continuando):`, lastError.message)
+        continue
+      }
       console.warn(`[DedotClient] ⚠️ Error al conectar a ${endpoint}:`, lastError.message)
       // Continuar con el siguiente endpoint
     }

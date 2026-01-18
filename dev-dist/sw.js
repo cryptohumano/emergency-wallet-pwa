@@ -67,7 +67,7 @@ if (!self.define) {
     });
   };
 }
-define(['./workbox-c5fd805d'], (function (workbox) { 'use strict';
+define(['./workbox-5b681a98'], (function (workbox) { 'use strict';
 
   self.skipWaiting();
   workbox.clientsClaim();
@@ -82,15 +82,23 @@ define(['./workbox-c5fd805d'], (function (workbox) { 'use strict';
     "revision": "3ca0b8505b4bec776b69afdba2768812"
   }, {
     "url": "/index.html",
-    "revision": "0.b1e57e1tpq8"
+    "revision": "0.5g8pel1l6nk"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("/index.html"), {
     allowlist: [/^\/$/],
     denylist: [/^\/_/, /\/[^/?]+\.[^/]+$/]
   }));
-  workbox.registerRoute(/^https:\/\/.*/, new workbox.NetworkFirst({
+  workbox.registerRoute(/^https:\/\/.*staticmap\.openstreetmap\.(de|org|fr)\/.*/, new workbox.NetworkOnly(), 'GET');
+  workbox.registerRoute(({
+    url
+  }) => {
+    return url.protocol === "https:" && !url.hostname.includes("staticmap.openstreetmap");
+  }, new workbox.NetworkFirst({
     "cacheName": "external-cache",
+    "matchOptions": {
+      "ignoreSearch": false
+    },
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 50,
       maxAgeSeconds: 86400
