@@ -23,7 +23,7 @@ interface KeyringContextType {
   refreshStoredAccounts: () => Promise<boolean>
 }
 
-const KeyringContext = createContext<KeyringContextType | undefined>(undefined)
+export const KeyringContext = createContext<KeyringContextType | undefined>(undefined)
 
 export function KeyringProvider({ children }: { children: ReactNode }) {
   const keyringData = useKeyring()

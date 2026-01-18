@@ -173,6 +173,8 @@ export async function openSharedDB(): Promise<IDBDatabase> {
       const DOCUMENTS_STORE_NAME = 'documents'
       const EXTERNAL_API_CONFIGS_STORE_NAME = 'external-api-configs'
       const DOCUMENT_QUEUE_STORE_NAME = 'document-queue'
+      const MOUNTAIN_LOGS_STORE_NAME = 'mountain-logs'
+      const AUTOGRAPHIC_SIGNATURES_STORE_NAME = 'autographic-signatures'
       
       // Verificar que los stores existan
       
@@ -182,12 +184,14 @@ export async function openSharedDB(): Promise<IDBDatabase> {
       const hasDocumentsStore = db.objectStoreNames.contains(DOCUMENTS_STORE_NAME)
       const hasExternalAPIConfigsStore = db.objectStoreNames.contains(EXTERNAL_API_CONFIGS_STORE_NAME)
       const hasDocumentQueueStore = db.objectStoreNames.contains(DOCUMENT_QUEUE_STORE_NAME)
+      const hasMountainLogsStore = db.objectStoreNames.contains(MOUNTAIN_LOGS_STORE_NAME)
+      const hasAutographicSignaturesStore = db.objectStoreNames.contains(AUTOGRAPHIC_SIGNATURES_STORE_NAME)
       const hasCorrectVersion = db.version === DB_VERSION
       
       console.log('[IndexedDB Shared] Stores disponibles:', Array.from(db.objectStoreNames))
       console.log(`[IndexedDB Shared] Versión de DB: ${db.version}, esperada: ${DB_VERSION}`)
       
-      if (!hasAccountsStore || !hasWebAuthnStore || !hasTransactionsStore || !hasDocumentsStore || !hasExternalAPIConfigsStore || !hasDocumentQueueStore || !hasCorrectVersion) {
+      if (!hasAccountsStore || !hasWebAuthnStore || !hasTransactionsStore || !hasDocumentsStore || !hasExternalAPIConfigsStore || !hasDocumentQueueStore || !hasMountainLogsStore || !hasAutographicSignaturesStore || !hasCorrectVersion) {
         console.warn('[IndexedDB Shared] ⚠️ Faltan stores, cerrando y eliminando base de datos para recrearla...')
         db.close()
         dbInstance = null
@@ -378,6 +382,13 @@ export async function openSharedDB(): Promise<IDBDatabase> {
           mountainLogsStore.createIndex('byStartDate', 'startDate', { unique: false })
           mountainLogsStore.createIndex('bySynced', 'synced', { unique: false })
           console.log(`[IndexedDB Shared] ObjectStore '${MOUNTAIN_LOGS_STORE_NAME}' creado con índices`)
+
+          // Crear store de firmas autográficas
+          const AUTOGRAPHIC_SIGNATURES_STORE_NAME = 'autographic-signatures'
+          const autographicSignaturesStore = db.createObjectStore(AUTOGRAPHIC_SIGNATURES_STORE_NAME, { keyPath: 'accountAddress' })
+          autographicSignaturesStore.createIndex('byCreatedAt', 'createdAt', { unique: false })
+          autographicSignaturesStore.createIndex('byUpdatedAt', 'updatedAt', { unique: false })
+          console.log(`[IndexedDB Shared] ObjectStore '${AUTOGRAPHIC_SIGNATURES_STORE_NAME}' creado con índices`)
         } else {
           const transaction = (event.target as IDBOpenDBRequest).transaction
           if (!transaction) {

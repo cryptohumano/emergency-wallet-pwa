@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { useKeyringContext } from '@/contexts/KeyringContext'
 import { AlertCircle, CheckCircle, Copy, Eye, EyeOff, Key, FileText, Users } from 'lucide-react'
 import { decryptPolkadotJsBackup, isPolkadotJsBackup } from '@/utils/polkadotJsBackup'
+import { getAllEncryptedAccounts } from '@/utils/secureStorage'
 
 type CryptoType = 'sr25519' | 'ed25519' | 'ecdsa'
 type ImportMethod = 'mnemonic' | 'uri' | 'json'
@@ -296,14 +297,68 @@ export default function ImportAccount() {
     setSuccess(false)
 
     try {
-      // Si no está desbloqueado y hay contraseña, intentar desbloquear primero
-      if (!isUnlocked && password) {
-        const unlocked = await unlock(password)
+      // Verificar si hay cuentas almacenadas
+      const storedAccounts = await getAllEncryptedAccounts()
+      const hasStoredAccounts = storedAccounts.length > 0
+
+      // Determinar la contraseña final a usar
+      let finalPassword: string | undefined = undefined
+
+      // Si hay cuentas almacenadas, requerir contraseña para desbloquear
+      if (hasStoredAccounts && !isUnlocked) {
+        if (!password || password.trim().length === 0) {
+          setError('Se requiere una contraseña para desbloquear el wallet y guardar las cuentas importadas')
+          setLoading(false)
+          return
+        }
+        const unlocked = await unlock(password.trim())
         if (!unlocked) {
           setError('Error al desbloquear el wallet. Verifica tu contraseña.')
           setLoading(false)
           return
         }
+        // Usar la contraseña que desbloqueó el wallet
+        finalPassword = password.trim()
+      } else if (hasStoredAccounts && isUnlocked) {
+        // Si el wallet ya está desbloqueado, requerir contraseña para guardar las nuevas cuentas
+        if (!password || password.trim().length === 0) {
+          setError('Se requiere una contraseña para guardar las cuentas importadas. Usa la contraseña de tu wallet.')
+          setLoading(false)
+          return
+        }
+        // Validar que la contraseña sea correcta intentando desbloquear (aunque ya esté desbloqueado)
+        // O simplemente usar la contraseña proporcionada
+        finalPassword = password.trim()
+      } else {
+        // Si no hay cuentas almacenadas, requerir contraseña para guardar las nuevas cuentas
+        if (!password || password.trim().length === 0) {
+          setError('Se requiere una contraseña para proteger y guardar las cuentas importadas. Esta será tu contraseña principal del wallet.')
+          setLoading(false)
+          return
+        }
+
+        // Validar longitud mínima
+        if (password.trim().length < 8) {
+          setError('La contraseña debe tener al menos 8 caracteres')
+          setLoading(false)
+          return
+        }
+
+        // Validar que coincidan
+        if (confirmPassword && password.trim() !== confirmPassword.trim()) {
+          setError('Las contraseñas no coinciden')
+          setLoading(false)
+          return
+        }
+
+        finalPassword = password.trim()
+      }
+
+      // Asegurar que tenemos una contraseña válida antes de importar
+      if (!finalPassword || finalPassword.length === 0) {
+        setError('Se requiere una contraseña válida para guardar las cuentas importadas')
+        setLoading(false)
+        return
       }
 
       const accountsToImport = backupAccounts.filter(acc => selectedAccounts.has(acc.address))
@@ -322,10 +377,11 @@ export default function ImportAccount() {
           
           // Usar addFromJson para importar cada cuenta individual
           // La contraseña del JSON es la misma para todas las cuentas del backup
+          // Usar finalPassword que ya fue validado arriba
           const account = await addFromJson(
             accountData.json,
             jsonPassword,
-            password || undefined
+            finalPassword
           )
           
           if (account) {
@@ -693,6 +749,40 @@ export default function ImportAccount() {
               })}
             </div>
 
+            {/* Campo de contraseña para guardar las cuentas */}
+            <div className="space-y-4 pt-4 border-t">
+              <div className="space-y-2">
+                <Label htmlFor="backup-password">
+                  Contraseña para Proteger las Cuentas {isUnlocked ? '(Opcional)' : '(Requerida)'}
+                </Label>
+                <Input
+                  id="backup-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={isUnlocked ? "Mínimo 8 caracteres (opcional)" : "Mínimo 8 caracteres (requerida)"}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {isUnlocked 
+                    ? "Si proporcionas una contraseña, las cuentas se encriptarán antes de guardarse. Si ya tienes cuentas, usa tu contraseña actual."
+                    : "Esta contraseña protegerá y guardará las cuentas importadas. Será tu contraseña principal del wallet."}
+                </p>
+              </div>
+
+              {password && (
+                <div className="space-y-2">
+                  <Label htmlFor="backup-confirm-password">Confirmar Contraseña</Label>
+                  <Input
+                    id="backup-confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Repite la contraseña"
+                  />
+                </div>
+              )}
+            </div>
+
             <div className="flex gap-2 pt-4 border-t">
               <Button
                 variant="outline"
@@ -700,6 +790,8 @@ export default function ImportAccount() {
                   setShowAccountSelection(false)
                   setBackupAccounts([])
                   setSelectedAccounts(new Set())
+                  setPassword('')
+                  setConfirmPassword('')
                 }}
                 className="flex-1"
               >

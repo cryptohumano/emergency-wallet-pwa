@@ -145,32 +145,69 @@ export function useKeyring() {
       for (const encAccount of encryptedAccounts) {
         try {
           const decryptedData = await decrypt(encAccount.encryptedData, password)
-          const { uri, mnemonic, type } = JSON.parse(decryptedData)
+          const parsed = JSON.parse(decryptedData)
           
-          // Usar uri si está disponible, sino mnemonic
-          const seed = uri || mnemonic
-          if (!seed) {
-            const error = new Error('No tiene uri ni mnemonic')
-            console.error(`[Keyring] ❌ Cuenta ${encAccount.address}: ${error.message}`)
-            failedAccounts.push({ address: encAccount.address, error })
-            continue
+          // Verificar si es una cuenta de Polkadot.js
+          if (parsed.isPolkadotJson && parsed.jsonData && parsed.jsonPassword) {
+            // Es una cuenta importada desde Polkadot.js
+            // Usar addFromJson con el JSON y su contraseña
+            const pair = keyring.addFromJson(parsed.jsonData, parsed.jsonPassword)
+            
+            // Verificar que la dirección coincida
+            if (pair.address !== encAccount.address) {
+              console.warn(`[Keyring] ⚠️ Dirección no coincide: esperada ${encAccount.address}, obtenida ${pair.address}`)
+            }
+            
+            // Asegurar que el pair esté desbloqueado
+            if (pair.isLocked) {
+              console.log(`[Keyring] 🔓 Desbloqueando pair al cargar: ${pair.address}`)
+              pair.unlock(parsed.jsonPassword)
+              if (pair.isLocked) {
+                console.error(`[Keyring] ❌ No se pudo desbloquear el pair: ${pair.address}`)
+                failedAccounts.push({ 
+                  address: encAccount.address, 
+                  error: new Error('No se pudo desbloquear el pair') 
+                })
+                continue
+              }
+            }
+            
+            loadedAccounts.push({
+              pair,
+              address: pair.address,
+              publicKey: pair.publicKey,
+              meta: pair.meta,
+            })
+            console.log(`[Keyring] ✅ Cuenta de Polkadot.js cargada y desbloqueada: ${pair.address}`)
+          } else {
+            // Es una cuenta normal (mnemonic/uri)
+            const { uri, mnemonic, type } = parsed
+            
+            // Usar uri si está disponible, sino mnemonic
+            const seed = uri || mnemonic
+            if (!seed) {
+              const error = new Error('No tiene uri ni mnemonic')
+              console.error(`[Keyring] ❌ Cuenta ${encAccount.address}: ${error.message}`)
+              failedAccounts.push({ address: encAccount.address, error })
+              continue
+            }
+            
+            // Agregar al keyring
+            const pair = keyring.addFromUri(seed, encAccount.meta, type || 'sr25519')
+            
+            // Verificar que la dirección coincida
+            if (pair.address !== encAccount.address) {
+              console.warn(`[Keyring] ⚠️ Dirección no coincide: esperada ${encAccount.address}, obtenida ${pair.address}`)
+            }
+            
+            loadedAccounts.push({
+              pair,
+              address: pair.address,
+              publicKey: pair.publicKey,
+              meta: pair.meta,
+            })
+            console.log(`[Keyring] ✅ Cuenta cargada: ${pair.address} (tipo: ${type || 'sr25519'})`)
           }
-          
-          // Agregar al keyring
-          const pair = keyring.addFromUri(seed, encAccount.meta, type || 'sr25519')
-          
-          // Verificar que la dirección coincida
-          if (pair.address !== encAccount.address) {
-            console.warn(`[Keyring] ⚠️ Dirección no coincide: esperada ${encAccount.address}, obtenida ${pair.address}`)
-          }
-          
-          loadedAccounts.push({
-            pair,
-            address: pair.address,
-            publicKey: pair.publicKey,
-            meta: pair.meta,
-          })
-          console.log(`[Keyring] ✅ Cuenta cargada: ${pair.address} (tipo: ${type || 'sr25519'})`)
         } catch (error) {
           console.error(`[Keyring] ❌ Error al cargar cuenta ${encAccount.address}:`, error)
           failedAccounts.push({ address: encAccount.address, error })
@@ -452,6 +489,18 @@ export function useKeyring() {
       // Agregar al keyring usando el método de Polkadot.js
       const pair = keyring.addFromJson(jsonData as any, jsonPassword)
       console.log(`[Keyring] ✅ Cuenta agregada al keyring desde JSON: ${pair.address}`)
+      
+      // Verificar si el pair está bloqueado y desbloquearlo si es necesario
+      // En Polkadot.js, addFromJson puede dejar el pair bloqueado si el JSON está encriptado
+      if (pair.isLocked) {
+        console.log(`[Keyring] 🔓 Desbloqueando pair: ${pair.address}`)
+        pair.unlock(jsonPassword)
+        if (pair.isLocked) {
+          console.warn(`[Keyring] ⚠️ No se pudo desbloquear el pair: ${pair.address}`)
+        } else {
+          console.log(`[Keyring] ✅ Pair desbloqueado: ${pair.address}`)
+        }
+      }
 
       const account: KeyringAccount = {
         pair,
@@ -468,17 +517,24 @@ export function useKeyring() {
       })
 
       // Guardar encriptado en IndexedDB
-      // Para JSON de Polkadot.js, guardamos el JSON original (sin la contraseña del JSON)
-      // La contraseña del JSON se pedirá al desbloquear
+      // Para JSON de Polkadot.js, guardamos el JSON original y la contraseña del JSON (ambos encriptados)
+      // La contraseña del JSON se necesita para desbloquear la cuenta al desbloquear el wallet
       if (password) {
         try {
           // Extraer el tipo del encoding
           const cryptoType = (jsonData as any).encoding?.content?.[1] || 'sr25519'
           
-          // Guardar el JSON original encriptado con nuestra contraseña
-          // No guardamos jsonPassword por seguridad
-          const encryptedData = await encrypt(JSON.stringify({ jsonData, isPolkadotJson: true }), password)
-          await saveEncryptedAccount({
+          // Guardar el JSON original y la contraseña del JSON, ambos encriptados con nuestra contraseña
+          // Esto permite desbloquear la cuenta sin pedir la contraseña del JSON cada vez
+          const dataToEncrypt = JSON.stringify({ 
+            jsonData, 
+            isPolkadotJson: true,
+            jsonPassword: jsonPassword // Guardar la contraseña del JSON encriptada
+          })
+          console.log(`[Keyring] 🔐 Encriptando datos para guardar en IndexedDB...`)
+          const encryptedData = await encrypt(dataToEncrypt, password)
+          
+          const accountToSave = {
             address: account.address,
             encryptedData,
             publicKey: u8aToHex(account.publicKey),
@@ -486,9 +542,22 @@ export function useKeyring() {
             meta: account.meta,
             createdAt: Date.now(),
             updatedAt: Date.now(),
-          })
-          console.log(`[Keyring] ✅ Cuenta guardada en IndexedDB: ${account.address}`)
-          setHasStoredAccounts(true)
+          }
+          
+          console.log(`[Keyring] 💾 Guardando cuenta en IndexedDB: ${account.address}`)
+          await saveEncryptedAccount(accountToSave)
+          
+          // Verificar que la cuenta se guardó correctamente
+          const savedAccounts = await getAllEncryptedAccounts()
+          const wasSaved = savedAccounts.some(acc => acc.address === account.address)
+          
+          if (wasSaved) {
+            console.log(`[Keyring] ✅ Cuenta guardada y verificada en IndexedDB: ${account.address}`)
+            setHasStoredAccounts(true)
+          } else {
+            console.error(`[Keyring] ❌ Cuenta NO encontrada en IndexedDB después de guardar: ${account.address}`)
+            throw new Error('La cuenta no se guardó correctamente en IndexedDB')
+          }
         } catch (error) {
           console.error('[Keyring] ❌ Error al guardar cuenta encriptada:', error)
           // Remover del keyring si falla el guardado

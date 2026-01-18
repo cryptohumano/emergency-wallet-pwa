@@ -1,9 +1,38 @@
 import { Button } from '@/components/ui/button'
-import { Search, Bell, Menu } from 'lucide-react'
+import { Search, Bell, LogOut } from 'lucide-react'
 import { NetworkSwitcher } from '@/components/NetworkSwitcher'
-import { useNetwork } from '@/contexts/NetworkContext'
 import { useContext } from 'react'
 import { NetworkContext } from '@/contexts/NetworkContext'
+import { KeyringContext } from '@/contexts/KeyringContext'
+
+// Componente separado para el botón de logout
+// Usa useContext directamente para evitar el error si el contexto no está disponible
+function LogoutButton() {
+  const keyringContext = useContext(KeyringContext)
+  
+  // Si el contexto no está disponible, no mostrar el botón
+  if (!keyringContext) {
+    return null
+  }
+  
+  const { isUnlocked, lock } = keyringContext
+  
+  if (!isUnlocked || !lock) {
+    return null
+  }
+  
+  return (
+    <Button 
+      variant="ghost" 
+      size="icon" 
+      className="h-8 w-8 sm:h-10 sm:w-10"
+      onClick={lock}
+      title="Cerrar sesión"
+    >
+      <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
+    </Button>
+  )
+}
 
 export function Header() {
   // Usar useContext directamente para evitar el error si el contexto no está disponible
@@ -19,6 +48,7 @@ export function Header() {
               <h1 className="text-lg sm:text-xl font-bold truncate">Aura Wallet</h1>
             </div>
             <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+              <LogoutButton />
               <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10">
                 <Search className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
@@ -49,6 +79,7 @@ export function Header() {
             </div>
           </div>
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            <LogoutButton />
             <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10">
               <Search className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
@@ -68,4 +99,3 @@ export function Header() {
     </header>
   )
 }
-
