@@ -538,6 +538,18 @@ export default function MountainLogDetail() {
   const processImageFromBase64 = async (dataUrl: string, milestoneId: string) => {
     if (!log) return
 
+    // Capturar referencias ANTES de cualquier operación asíncrona
+    const currentLog = log
+    const docRef = typeof document !== 'undefined' && document !== null 
+      ? document 
+      : (typeof window !== 'undefined' && window.document ? window.document : null)
+    
+    if (!docRef) {
+      console.error('[processImageFromBase64] document no está disponible al inicio')
+      toast.error('Error: No se puede procesar la imagen en este momento')
+      return
+    }
+
     try {
       // Convertir base64 a blob
       const response = await fetch(dataUrl)
@@ -563,13 +575,6 @@ export default function MountainLogDetail() {
         return
       }
 
-      // Verificar que document esté disponible
-      if (typeof document === 'undefined' || document === null) {
-        console.error('[processImageFromBase64] document no está disponible')
-        toast.error('Error: No se puede procesar la imagen en este momento')
-        return
-      }
-
       // Crear imagen
       const img = new Image()
       
@@ -580,20 +585,11 @@ export default function MountainLogDetail() {
 
       img.onload = async () => {
         try {
-          // Verificar que document esté disponible (puede cambiar durante async)
-          // Usar window.document como fallback
-          const doc = typeof document !== 'undefined' ? document : (typeof window !== 'undefined' && window.document ? window.document : null)
+          // Usar la referencia capturada (más confiable que acceder a document directamente)
+          const doc = docRef
           
-          if (!doc) {
-            console.error('[processImageFromBase64] document no está disponible en img.onload')
-            console.error('[processImageFromBase64] typeof document:', typeof document)
-            console.error('[processImageFromBase64] typeof window:', typeof window)
-            toast.error('Error: No se puede procesar la imagen en este momento')
-            return
-          }
-
           // Verificar que el componente aún esté montado
-          if (!log || !milestoneId) {
+          if (!currentLog || !milestoneId) {
             console.error('[processImageFromBase64] Log o milestoneId no disponible en img.onload')
             toast.error('Error: La bitácora ya no está disponible')
             return
@@ -647,7 +643,7 @@ export default function MountainLogDetail() {
           const thumbnail = canvas.toDataURL('image/jpeg', 0.7)
 
           // Verificar una vez más antes de guardar
-          if (!log || !milestoneId) {
+          if (!currentLog || !milestoneId) {
             console.error('[processImageFromBase64] Log o milestoneId perdido antes de guardar')
             toast.error('Error: La bitácora ya no está disponible')
             return
@@ -669,8 +665,8 @@ export default function MountainLogDetail() {
           }
 
           const updatedLog: MountainLog = {
-            ...log,
-            milestones: log.milestones.map(m =>
+            ...currentLog,
+            milestones: currentLog.milestones.map(m =>
               m.id === milestoneId
                 ? { ...m, images: [...m.images, image] }
                 : m
@@ -801,6 +797,19 @@ export default function MountainLogDetail() {
             return
           }
 
+          // Capturar referencias ANTES de cualquier operación asíncrona
+          const currentLog = log
+          const currentMilestoneId = milestoneId
+          const docRef = typeof document !== 'undefined' && document !== null 
+            ? document 
+            : (typeof window !== 'undefined' && window.document ? window.document : null)
+          
+          if (!docRef) {
+            console.error('[handleImageFile] document no está disponible al inicio')
+            toast.error('Error: No se puede procesar la imagen en este momento')
+            return
+          }
+
           const dataUrl = e.target?.result as string
           if (!dataUrl) {
             console.error('[handleImageFile] No se pudo obtener dataUrl')
@@ -850,9 +859,8 @@ export default function MountainLogDetail() {
             try {
               console.log('[handleImageFile] Imagen cargada, dimensiones:', img.width, 'x', img.height)
 
-              // Verificar que document esté disponible (iOS puede tener problemas)
-              // Usar window.document como fallback
-              const doc = typeof document !== 'undefined' ? document : (typeof window !== 'undefined' && window.document ? window.document : null)
+              // Usar la referencia capturada (más confiable que acceder a document directamente)
+              const doc = docRef
               
               if (!doc) {
                 console.error('[handleImageFile] document no está disponible en img.onload')
@@ -863,7 +871,7 @@ export default function MountainLogDetail() {
               }
 
               // Verificar que el componente aún esté montado y el log exista
-              if (!log || !milestoneId) {
+              if (!currentLog || !currentMilestoneId) {
                 console.error('[handleImageFile] Log o milestoneId no disponible en img.onload')
                 toast.error('Error: La bitácora ya no está disponible')
                 return
@@ -930,13 +938,13 @@ export default function MountainLogDetail() {
                 }
               }
 
-              console.log('[handleImageFile] Creando imagen, milestoneId:', milestoneId)
-              console.log('[handleImageFile] Milestones actuales:', log.milestones.length)
+              console.log('[handleImageFile] Creando imagen, milestoneId:', currentMilestoneId)
+              console.log('[handleImageFile] Milestones actuales:', currentLog.milestones.length)
 
               const updatedLog: MountainLog = {
-                ...log,
-                milestones: log.milestones.map(m => {
-                  if (m.id === milestoneId) {
+                ...currentLog,
+                milestones: currentLog.milestones.map(m => {
+                  if (m.id === currentMilestoneId) {
                     console.log('[handleImageFile] Agregando imagen al milestone:', m.id, 'Imágenes actuales:', m.images.length)
                     return { ...m, images: [...m.images, image] }
                   }
@@ -946,7 +954,7 @@ export default function MountainLogDetail() {
               }
 
               // Verificar una vez más antes de guardar
-              if (!log || !milestoneId) {
+              if (!currentLog || !currentMilestoneId) {
                 console.error('[handleImageFile] Log o milestoneId perdido antes de guardar')
                 toast.error('Error: La bitácora ya no está disponible')
                 return
@@ -972,7 +980,7 @@ export default function MountainLogDetail() {
                 milestoneIdForCapture.current = null
                 
                 // Verificar que se guardó correctamente
-                const savedMilestone = updatedLog.milestones.find(m => m.id === milestoneId)
+                const savedMilestone = updatedLog.milestones.find(m => m.id === currentMilestoneId)
                 if (savedMilestone) {
                   console.log('[handleImageFile] ✅ Imagen agregada. Total de imágenes en milestone:', savedMilestone.images.length)
                 } else {

@@ -7,34 +7,29 @@ import jsPDF from 'jspdf'
 
 /**
  * Inyecta metadata GPS en un documento PDF
+ * 
+ * NOTA: jsPDF tiene limitaciones para metadata personalizada.
+ * Esta función es un placeholder. La metadata GPS real se maneja
+ * en el objeto Document de IndexedDB y se puede agregar al PDF
+ * cuando se convierte a pdf-lib (ver mountainLogPDFGenerator.ts).
+ * 
+ * Esta función no hace nada actualmente, pero se mantiene para
+ * compatibilidad con código existente.
  */
 export function injectGPSMetadata(
   pdf: jsPDF,
   gpsMetadata: GPSMetadata
 ): void {
-  // jsPDF permite agregar metadata personalizada
-  const metadata = {
-    title: pdf.getMetadata()?.title || '',
-    author: pdf.getMetadata()?.author || '',
-    subject: pdf.getMetadata()?.subject || '',
-    keywords: pdf.getMetadata()?.keywords || '',
-    creator: 'Aura Wallet',
-    producer: 'Aura Wallet PDF Generator',
-    // Metadata GPS personalizada
-    custom: {
-      gps: {
-        latitude: gpsMetadata.latitude,
-        longitude: gpsMetadata.longitude,
-        altitude: gpsMetadata.altitude,
-        accuracy: gpsMetadata.accuracy,
-        timestamp: gpsMetadata.timestamp,
-      },
-    },
-  }
-
-  // Nota: jsPDF tiene limitaciones para metadata personalizada
-  // En una implementación completa, podríamos usar pdf-lib para esto
-  // Por ahora, guardamos la metadata GPS en el objeto Document de IndexedDB
+  // jsPDF no tiene getMetadata(). Las propiedades se establecen con setProperties()
+  // y se pueden leer desde pdf.internal.metadata, pero no es necesario aquí.
+  
+  // La metadata GPS se guarda en el objeto Document de IndexedDB.
+  // Si necesitamos agregarla al PDF, debemos hacerlo después de convertir
+  // el PDF a pdf-lib (ver mountainLogPDFGenerator.ts línea 664+).
+  
+  // Por ahora, esta función no hace nada para evitar errores.
+  // TODO: Si se necesita metadata GPS en el PDF, agregarla en mountainLogPDFGenerator.ts
+  // después de cargar el PDF con PDFDocument.load()
 }
 
 /**
