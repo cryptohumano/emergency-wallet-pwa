@@ -495,14 +495,26 @@ export default function MountainLogDetail() {
     milestoneIdForCapture.current = milestoneId
     console.log('[handleAddImageToMilestone] Milestone ID guardado:', milestoneId)
     
-    // En móvil, usar input file con capture
-    // En desktop, ofrecer opción de webcam o archivo
-    if (isMobile) {
+    // Verificar si estamos en un dispositivo móvil REAL (no solo por tamaño de pantalla)
+    // El atributo capture solo funciona en dispositivos móviles reales con HTTPS
+    const isRealMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    const isHTTPS = window.location.protocol === 'https:'
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    
+    // En localhost, SIEMPRE mostrar opciones (capture no funciona bien en localhost)
+    // En producción HTTPS con móvil real, intentar usar capture directamente
+    if (isLocalhost) {
+      // En localhost, siempre mostrar opciones (cámara web o archivo)
+      console.log('[handleAddImageToMilestone] Localhost detectado - mostrando opciones (cámara web o archivo)...')
+      setShowCameraDialog(true)
+    } else if (isRealMobile && isHTTPS) {
+      // En móvil real con HTTPS, intentar usar input file con capture
       cameraInputRef.current?.setAttribute('data-milestone-id', milestoneId)
-      console.log('[handleAddImageToMilestone] Abriendo cámara en móvil...')
+      console.log('[handleAddImageToMilestone] Móvil real con HTTPS - abriendo cámara...')
       cameraInputRef.current?.click()
     } else {
-      // En desktop, mostrar opción de webcam o archivo
+      // En desktop o cuando capture no funciona, mostrar opción de webcam o archivo
+      console.log('[handleAddImageToMilestone] Mostrando opciones (cámara web o archivo)...')
       setShowCameraDialog(true)
     }
   }
@@ -544,63 +556,148 @@ export default function MountainLogDetail() {
         }
       }
 
+      // Verificar que Image esté disponible
+      if (typeof Image === 'undefined') {
+        console.error('[processImageFromBase64] Image constructor no está disponible')
+        toast.error('Error: No se puede procesar la imagen')
+        return
+      }
+
+      // Verificar que document esté disponible
+      if (typeof document === 'undefined' || document === null) {
+        console.error('[processImageFromBase64] document no está disponible')
+        toast.error('Error: No se puede procesar la imagen en este momento')
+        return
+      }
+
       // Crear imagen
       const img = new Image()
-      img.onload = async () => {
-        const canvas = document.createElement('canvas')
-        const maxSize = 200
-        let width = img.width
-        let height = img.height
-
-        if (width > height) {
-          if (width > maxSize) {
-            height = (height * maxSize) / width
-            width = maxSize
-          }
-        } else {
-          if (height > maxSize) {
-            width = (width * maxSize) / height
-            height = maxSize
-          }
-        }
-
-        canvas.width = width
-        canvas.height = height
-        const ctx = canvas.getContext('2d')
-        if (!ctx) return
-
-        ctx.drawImage(img, 0, 0, width, height)
-        const thumbnail = canvas.toDataURL('image/jpeg', 0.7)
-
-        const image: MountainLogImage = {
-          id: uuidv4(),
-          data: dataUrl,
-          thumbnail,
-          metadata: {
-            filename: file.name,
-            mimeType: file.type,
-            size: file.size,
-            width: img.width,
-            height: img.height,
-            capturedAt: Date.now(),
-            gpsMetadata
-          }
-        }
-
-        const updatedLog: MountainLog = {
-          ...log,
-          milestones: log.milestones.map(m =>
-            m.id === milestoneId
-              ? { ...m, images: [...m.images, image] }
-              : m
-          ),
-          updatedAt: Date.now()
-        }
-
-        await saveMountainLog(updatedLog)
-        setLog(updatedLog)
-        toast.success('Imagen agregada')
+      
+      img.onerror = (error) => {
+        console.error('[processImageFromBase64] Error al cargar imagen:', error)
+        toast.error('Error al procesar la imagen')
       }
+
+      img.onload = async () => {
+        try {
+          // Verificar que document esté disponible (puede cambiar durante async)
+          // Usar window.document como fallback
+          const doc = typeof document !== 'undefined' ? document : (typeof window !== 'undefined' && window.document ? window.document : null)
+          
+          if (!doc) {
+            console.error('[processImageFromBase64] document no está disponible en img.onload')
+            console.error('[processImageFromBase64] typeof document:', typeof document)
+            console.error('[processImageFromBase64] typeof window:', typeof window)
+            toast.error('Error: No se puede procesar la imagen en este momento')
+            return
+          }
+
+          // Verificar que el componente aún esté montado
+          if (!log || !milestoneId) {
+            console.error('[processImageFromBase64] Log o milestoneId no disponible en img.onload')
+            toast.error('Error: La bitácora ya no está disponible')
+            return
+          }
+
+          // Verificar que createElement esté disponible
+          if (typeof doc.createElement !== 'function') {
+            console.error('[processImageFromBase64] document.createElement no está disponible')
+            toast.error('Error: No se puede procesar la imagen')
+            return
+          }
+
+          // Crear canvas con try-catch adicional para capturar errores
+          let canvas: HTMLCanvasElement
+          try {
+            canvas = doc.createElement('canvas')
+            if (!canvas) {
+              throw new Error('createElement retornó null')
+            }
+          } catch (error) {
+            console.error('[processImageFromBase64] Error al crear canvas:', error)
+            toast.error('Error: No se puede procesar la imagen. Intenta recargar la página.')
+            return
+          }
+          const maxSize = 200
+          let width = img.width
+          let height = img.height
+
+          if (width > height) {
+            if (width > maxSize) {
+              height = (height * maxSize) / width
+              width = maxSize
+            }
+          } else {
+            if (height > maxSize) {
+              width = (width * maxSize) / height
+              height = maxSize
+            }
+          }
+
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          if (!ctx) {
+            console.error('[processImageFromBase64] No se pudo obtener contexto del canvas')
+            toast.error('Error al procesar la imagen')
+            return
+          }
+
+          ctx.drawImage(img, 0, 0, width, height)
+          const thumbnail = canvas.toDataURL('image/jpeg', 0.7)
+
+          // Verificar una vez más antes de guardar
+          if (!log || !milestoneId) {
+            console.error('[processImageFromBase64] Log o milestoneId perdido antes de guardar')
+            toast.error('Error: La bitácora ya no está disponible')
+            return
+          }
+
+          const image: MountainLogImage = {
+            id: uuidv4(),
+            data: dataUrl,
+            thumbnail,
+            metadata: {
+              filename: file.name,
+              mimeType: file.type,
+              size: file.size,
+              width: img.width,
+              height: img.height,
+              capturedAt: Date.now(),
+              gpsMetadata
+            }
+          }
+
+          const updatedLog: MountainLog = {
+            ...log,
+            milestones: log.milestones.map(m =>
+              m.id === milestoneId
+                ? { ...m, images: [...m.images, image] }
+                : m
+            ),
+            updatedAt: Date.now()
+          }
+
+          console.log('[processImageFromBase64] Guardando bitácora...')
+          await saveMountainLog(updatedLog)
+          console.log('[processImageFromBase64] Bitácora guardada exitosamente')
+          
+          setLog(prevLog => {
+            if (!prevLog) {
+              console.warn('[processImageFromBase64] Componente desmontado, no se actualiza estado')
+              return prevLog
+            }
+            return updatedLog
+          })
+          
+          toast.success('Imagen agregada exitosamente')
+        } catch (error) {
+          console.error('[processImageFromBase64] Error en img.onload:', error)
+          toast.error('Error al procesar la imagen: ' + (error instanceof Error ? error.message : 'Error desconocido'))
+        }
+      }
+
+      // Asignar src después de configurar handlers
       img.src = dataUrl
     } catch (error) {
       console.error('Error al procesar imagen:', error)
@@ -754,8 +851,13 @@ export default function MountainLogDetail() {
               console.log('[handleImageFile] Imagen cargada, dimensiones:', img.width, 'x', img.height)
 
               // Verificar que document esté disponible (iOS puede tener problemas)
-              if (typeof document === 'undefined' || document === null) {
-                console.error('[handleImageFile] document no está disponible')
+              // Usar window.document como fallback
+              const doc = typeof document !== 'undefined' ? document : (typeof window !== 'undefined' && window.document ? window.document : null)
+              
+              if (!doc) {
+                console.error('[handleImageFile] document no está disponible en img.onload')
+                console.error('[handleImageFile] typeof document:', typeof document)
+                console.error('[handleImageFile] typeof window:', typeof window)
                 toast.error('Error: No se puede procesar la imagen en este momento')
                 return
               }
@@ -767,7 +869,25 @@ export default function MountainLogDetail() {
                 return
               }
 
-              const canvas = document.createElement('canvas')
+              // Verificar que createElement esté disponible
+              if (typeof doc.createElement !== 'function') {
+                console.error('[handleImageFile] document.createElement no está disponible')
+                toast.error('Error: No se puede procesar la imagen')
+                return
+              }
+
+              // Crear canvas con try-catch adicional para capturar errores
+              let canvas: HTMLCanvasElement
+              try {
+                canvas = doc.createElement('canvas')
+                if (!canvas) {
+                  throw new Error('createElement retornó null')
+                }
+              } catch (error) {
+                console.error('[handleImageFile] Error al crear canvas:', error)
+                toast.error('Error: No se puede procesar la imagen. Intenta recargar la página.')
+                return
+              }
               const maxSize = 200
               let width = img.width
               let height = img.height
@@ -1646,41 +1766,50 @@ export default function MountainLogDetail() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog para capturar foto desde webcam (desktop) */}
+      {/* Dialog para capturar foto desde webcam o archivo */}
       <Dialog open={showCameraDialog} onOpenChange={(open) => {
         if (!open) {
           setShowCameraDialog(false)
           setCurrentMilestoneForImage(null)
+          milestoneIdForCapture.current = null
         }
       }}>
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Agregar Foto</DialogTitle>
+            <DialogTitle>Agregar Imagen al Milestone</DialogTitle>
             <DialogDescription>
-              Elige cómo deseas agregar la foto
+              Elige cómo deseas agregar la imagen: desde un archivo o capturando con la cámara web
             </DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            <Button
-              variant="outline"
-              onClick={handleFileSelect}
-              className="flex flex-col items-center gap-2 h-auto py-6"
-            >
-              <ImageIcon className="h-8 w-8" />
-              <span>Desde Archivo</span>
-            </Button>
-            <div className="flex flex-col items-center justify-center">
-              <p className="text-sm text-muted-foreground mb-2">O usa la webcam:</p>
+          <div className="mt-4 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <Button
+                variant="outline"
+                onClick={handleFileSelect}
+                className="flex flex-col items-center gap-2 h-auto py-6"
+              >
+                <ImageIcon className="h-8 w-8" />
+                <span className="font-medium">Desde Archivo</span>
+                <span className="text-xs text-muted-foreground">Galería o explorador</span>
+              </Button>
+              <div className="flex flex-col items-center justify-center p-4 border rounded-lg bg-muted/30">
+                <Camera className="h-8 w-8 mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground text-center">
+                  O usa la cámara web abajo
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="mt-4">
-            <PhotoCapture
-              onCapture={handleCameraCapture}
-              onCancel={() => {
-                setShowCameraDialog(false)
-                setCurrentMilestoneForImage(null)
-              }}
-            />
+            <div className="border-t pt-4">
+              <div className="mb-2 text-sm font-medium">Capturar desde cámara web:</div>
+              <PhotoCapture
+                onCapture={handleCameraCapture}
+                onCancel={() => {
+                  setShowCameraDialog(false)
+                  setCurrentMilestoneForImage(null)
+                  milestoneIdForCapture.current = null
+                }}
+              />
+            </div>
           </div>
         </DialogContent>
       </Dialog>
