@@ -42,6 +42,22 @@ export default function SignatureCanvasComponent({
 
   const handleSave = useCallback(() => {
     if (signatureRef.current && !signatureRef.current.isEmpty()) {
+      // Exportar como SVG transparente si está disponible, sino PNG
+      try {
+        // Intentar obtener SVG (transparente)
+        const svgData = signatureRef.current.toSVG()
+        if (svgData) {
+          // Convertir SVG a base64
+          const svgBase64 = btoa(unescape(encodeURIComponent(svgData)))
+          const svgDataUrl = `data:image/svg+xml;base64,${svgBase64}`
+          onSave(svgDataUrl)
+          return
+        }
+      } catch (error) {
+        console.warn('No se pudo exportar como SVG, usando PNG:', error)
+      }
+      
+      // Fallback a PNG con fondo transparente
       const signatureImage = signatureRef.current.toDataURL('image/png')
       onSave(signatureImage)
     }
@@ -72,7 +88,7 @@ export default function SignatureCanvasComponent({
                   },
                 }}
                 onEnd={handleEnd}
-                backgroundColor="#ffffff"
+                backgroundColor="transparent"
                 penColor="#000000"
               />
             </div>

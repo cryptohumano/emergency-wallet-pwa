@@ -4,7 +4,7 @@
  */
 
 const DB_NAME = 'pwa-substrate-keyring'
-const DB_VERSION = 6 // Incrementado para agregar stores de documentos
+const DB_VERSION = 8 // Incrementado para agregar store de firmas autográficas
 
 let dbInstance: IDBDatabase | null = null
 let openPromise: Promise<IDBDatabase> | null = null
@@ -18,7 +18,7 @@ export async function openSharedDB(): Promise<IDBDatabase> {
   // Si ya hay una instancia, verificar que tenga todos los stores necesarios
   if (dbInstance) {
     // Verificar que todos los stores necesarios existen
-    const requiredStores = ['encrypted-accounts', 'webauthn-credentials', 'transactions', 'documents', 'external-api-configs', 'document-queue']
+    const requiredStores = ['encrypted-accounts', 'webauthn-credentials', 'transactions', 'documents', 'external-api-configs', 'document-queue', 'mountain-logs', 'autographic-signatures']
     const missingStores = requiredStores.filter(store => !dbInstance.objectStoreNames.contains(store))
     if (missingStores.length > 0) {
       console.warn(`[IndexedDB Shared] ⚠️ Faltan stores: ${missingStores.join(', ')}. Cerrando conexión para forzar migración...`)
@@ -271,6 +271,23 @@ export async function openSharedDB(): Promise<IDBDatabase> {
             documentQueueStore.createIndex('byExternalApi', 'externalApiId', { unique: false })
             documentQueueStore.createIndex('byCreatedAt', 'createdAt', { unique: false })
             console.log(`[IndexedDB Shared] ObjectStore '${DOCUMENT_QUEUE_STORE_NAME}' creado con índices`)
+
+            // Crear store de bitácoras de montañismo
+            const MOUNTAIN_LOGS_STORE_NAME = 'mountain-logs'
+            const mountainLogsStore = recreateDb.createObjectStore(MOUNTAIN_LOGS_STORE_NAME, { keyPath: 'logId' })
+            mountainLogsStore.createIndex('byStatus', 'status', { unique: false })
+            mountainLogsStore.createIndex('byAccount', 'relatedAccount', { unique: false })
+            mountainLogsStore.createIndex('byCreatedAt', 'createdAt', { unique: false })
+            mountainLogsStore.createIndex('byUpdatedAt', 'updatedAt', { unique: false })
+            mountainLogsStore.createIndex('byStartDate', 'startDate', { unique: false })
+            mountainLogsStore.createIndex('bySynced', 'synced', { unique: false })
+            console.log(`[IndexedDB Shared] ObjectStore '${MOUNTAIN_LOGS_STORE_NAME}' creado con índices`)
+
+            const AUTOGRAPHIC_SIGNATURES_STORE_NAME = 'autographic-signatures'
+            const autographicSignaturesStore = recreateDb.createObjectStore(AUTOGRAPHIC_SIGNATURES_STORE_NAME, { keyPath: 'accountAddress' })
+            autographicSignaturesStore.createIndex('byCreatedAt', 'createdAt', { unique: false })
+            autographicSignaturesStore.createIndex('byUpdatedAt', 'updatedAt', { unique: false })
+            console.log(`[IndexedDB Shared] ObjectStore '${AUTOGRAPHIC_SIGNATURES_STORE_NAME}' creado con índices`)
           }
         }
         
@@ -299,6 +316,7 @@ export async function openSharedDB(): Promise<IDBDatabase> {
       const DOCUMENTS_STORE_NAME = 'documents'
       const EXTERNAL_API_CONFIGS_STORE_NAME = 'external-api-configs'
       const DOCUMENT_QUEUE_STORE_NAME = 'document-queue'
+      const MOUNTAIN_LOGS_STORE_NAME = 'mountain-logs'
 
       try {
         // Si es una instalación nueva (sin versión anterior)
@@ -350,6 +368,16 @@ export async function openSharedDB(): Promise<IDBDatabase> {
           documentQueueStore.createIndex('byExternalApi', 'externalApiId', { unique: false })
           documentQueueStore.createIndex('byCreatedAt', 'createdAt', { unique: false })
           console.log(`[IndexedDB Shared] ObjectStore '${DOCUMENT_QUEUE_STORE_NAME}' creado con índices`)
+
+          // Crear store de bitácoras de montañismo
+          const mountainLogsStore = db.createObjectStore(MOUNTAIN_LOGS_STORE_NAME, { keyPath: 'logId' })
+          mountainLogsStore.createIndex('byStatus', 'status', { unique: false })
+          mountainLogsStore.createIndex('byAccount', 'relatedAccount', { unique: false })
+          mountainLogsStore.createIndex('byCreatedAt', 'createdAt', { unique: false })
+          mountainLogsStore.createIndex('byUpdatedAt', 'updatedAt', { unique: false })
+          mountainLogsStore.createIndex('byStartDate', 'startDate', { unique: false })
+          mountainLogsStore.createIndex('bySynced', 'synced', { unique: false })
+          console.log(`[IndexedDB Shared] ObjectStore '${MOUNTAIN_LOGS_STORE_NAME}' creado con índices`)
         } else {
           const transaction = (event.target as IDBOpenDBRequest).transaction
           if (!transaction) {
@@ -460,6 +488,43 @@ export async function openSharedDB(): Promise<IDBDatabase> {
                 console.log(`[IndexedDB Shared] ✅ ObjectStore '${DOCUMENT_QUEUE_STORE_NAME}' creado con índices`)
               } catch (error) {
                 console.error(`[IndexedDB Shared] ❌ Error al crear store '${DOCUMENT_QUEUE_STORE_NAME}':`, error)
+                throw error
+              }
+            }
+          }
+
+          // Migración de versión 6 a 7: Agregar store de bitácoras de montañismo
+          if (oldVersion < 7) {
+            console.log('[IndexedDB Shared] Migrando de versión 6 a 7: Agregando store de bitácoras de montañismo...')
+            if (!db.objectStoreNames.contains(MOUNTAIN_LOGS_STORE_NAME)) {
+              try {
+                const mountainLogsStore = db.createObjectStore(MOUNTAIN_LOGS_STORE_NAME, { keyPath: 'logId' })
+                mountainLogsStore.createIndex('byStatus', 'status', { unique: false })
+                mountainLogsStore.createIndex('byAccount', 'relatedAccount', { unique: false })
+                mountainLogsStore.createIndex('byCreatedAt', 'createdAt', { unique: false })
+                mountainLogsStore.createIndex('byUpdatedAt', 'updatedAt', { unique: false })
+                mountainLogsStore.createIndex('byStartDate', 'startDate', { unique: false })
+                mountainLogsStore.createIndex('bySynced', 'synced', { unique: false })
+                console.log(`[IndexedDB Shared] ✅ ObjectStore '${MOUNTAIN_LOGS_STORE_NAME}' creado con índices`)
+              } catch (error) {
+                console.error(`[IndexedDB Shared] ❌ Error al crear store '${MOUNTAIN_LOGS_STORE_NAME}':`, error)
+                throw error
+              }
+            }
+          }
+
+          // Migración de versión 7 a 8: Agregar store de firmas autográficas
+          if (oldVersion < 8) {
+            console.log('[IndexedDB Shared] Migrando de versión 7 a 8: Agregando store de firmas autográficas...')
+            const AUTOGRAPHIC_SIGNATURES_STORE_NAME = 'autographic-signatures'
+            if (!db.objectStoreNames.contains(AUTOGRAPHIC_SIGNATURES_STORE_NAME)) {
+              try {
+                const autographicSignaturesStore = db.createObjectStore(AUTOGRAPHIC_SIGNATURES_STORE_NAME, { keyPath: 'accountAddress' })
+                autographicSignaturesStore.createIndex('byCreatedAt', 'createdAt', { unique: false })
+                autographicSignaturesStore.createIndex('byUpdatedAt', 'updatedAt', { unique: false })
+                console.log(`[IndexedDB Shared] ✅ ObjectStore '${AUTOGRAPHIC_SIGNATURES_STORE_NAME}' creado con índices`)
+              } catch (error) {
+                console.error(`[IndexedDB Shared] ❌ Error al crear store '${AUTOGRAPHIC_SIGNATURES_STORE_NAME}':`, error)
                 throw error
               }
             }

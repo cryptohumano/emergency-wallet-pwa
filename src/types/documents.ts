@@ -2,7 +2,7 @@
  * Tipos TypeScript para el sistema de documentos
  */
 
-export type DocumentType = 'flight_log' | 'medical_record' | 'attestation' | 'contract' | 'generic' | 'other'
+export type DocumentType = 'flight_log' | 'medical_record' | 'attestation' | 'contract' | 'generic' | 'mountain_log' | 'other'
 
 export type SignatureStatus = 'pending' | 'partially_signed' | 'fully_signed' | 'expired' | 'rejected'
 

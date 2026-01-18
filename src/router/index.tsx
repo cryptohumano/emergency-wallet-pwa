@@ -17,6 +17,8 @@ import DocumentEditor from '@/pages/DocumentEditor'
 import FlightLogs from '@/pages/FlightLogs'
 import MedicalRecords from '@/pages/MedicalRecords'
 import Attestations from '@/pages/Attestations'
+import MountainLogs from '@/pages/MountainLogs'
+import MountainLogDetail from '@/pages/MountainLogDetail'
 import Settings from '@/pages/Settings'
 import Identity from '@/pages/Identity'
 
@@ -115,6 +117,23 @@ export const router = createBrowserRouter([
       {
         path: 'attestations',
         element: <Attestations />,
+      },
+      {
+        path: 'mountain-logs',
+        children: [
+          {
+            index: true,
+            element: <MountainLogs />,
+          },
+          {
+            path: 'new',
+            element: <MountainLogDetail />,
+          },
+          {
+            path: ':logId',
+            element: <MountainLogDetail />,
+          },
+        ],
       },
       {
         path: 'settings',

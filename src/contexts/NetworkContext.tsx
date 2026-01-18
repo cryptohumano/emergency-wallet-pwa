@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, ReactNode, useCallback } from 'react'
-import { ChainInfo, useDedotClient } from '@/hooks/useDedotClient'
+import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react'
+import { ChainInfo, useDedotClient, DEFAULT_CHAINS } from '@/hooks/useDedotClient'
 import { DedotClient } from 'dedot'
 
 interface NetworkContextType {
@@ -13,8 +13,17 @@ interface NetworkContextType {
 const NetworkContext = createContext<NetworkContextType | undefined>(undefined)
 
 export function NetworkProvider({ children }: { children: ReactNode }) {
-  const [selectedChain, setSelectedChain] = useState<ChainInfo | null>(null)
+  // Asset Hub (Paseo) como red por defecto
+  const defaultChain = DEFAULT_CHAINS.find(c => c.endpoint === 'wss://sys.ibp.network/asset-hub-paseo') || DEFAULT_CHAINS[0]
+  const [selectedChain, setSelectedChain] = useState<ChainInfo | null>(defaultChain)
   const { client, isConnecting, error } = useDedotClient(selectedChain?.endpoint || null)
+  
+  // Asegurar que siempre haya una red seleccionada
+  useEffect(() => {
+    if (!selectedChain) {
+      setSelectedChain(defaultChain)
+    }
+  }, [selectedChain, defaultChain])
 
   return (
     <NetworkContext.Provider

@@ -142,6 +142,60 @@ export async function createContractDocument(
 }
 
 /**
+ * Crea un documento desde un PDF base64 ya generado
+ */
+export async function createDocumentFromPDF(
+  options: {
+    type: DocumentType
+    category?: string
+    subcategory?: string
+    metadata: DocumentMetadata
+    gpsMetadata?: GPSMetadata
+    pdfBase64: string
+    relatedAccount?: string
+    encrypted?: boolean
+  }
+): Promise<Document> {
+  const documentId = uuidv4()
+  
+  // Calcular hash y tamaño del PDF
+  const { calculatePDFHash } = await import('@/services/pdf/PDFHash')
+  const pdfHash = await calculatePDFHash(options.pdfBase64)
+  
+  // Calcular tamaño (aproximado desde base64)
+  const pdfSize = Math.floor((options.pdfBase64.length * 3) / 4)
+
+  // Crear objeto Document
+  const document: Document = {
+    documentId,
+    type: options.type,
+    category: options.category,
+    subcategory: options.subcategory,
+    pdf: options.pdfBase64,
+    pdfHash,
+    pdfSize,
+    signatures: [],
+    encrypted: options.encrypted || false,
+    metadata: {
+      ...options.metadata,
+      createdAt: new Date().toISOString(),
+      creator: 'Andino Wallet',
+      producer: 'Andino Wallet PDF Generator',
+    },
+    gpsMetadata: options.gpsMetadata,
+    relatedAccount: options.relatedAccount,
+    synced: false,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  }
+
+  // Guardar en IndexedDB
+  await saveDocument(document)
+
+  return document
+}
+
+/**
  * Obtiene un documento por ID
  */
 export async function getDocumentById(documentId: string): Promise<Document | null> {

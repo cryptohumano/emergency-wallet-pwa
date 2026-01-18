@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
-import { Home, Wallet, Send, FileText, Settings, Menu, X } from 'lucide-react'
+import { Home, Wallet, Send, FileText, Settings, Menu, X, Mountain } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -17,6 +17,7 @@ const navigation = [
   { name: 'Cuentas', href: '/accounts', icon: Wallet, description: 'Gestionar tus cuentas' },
   { name: 'Enviar', href: '/send', icon: Send, description: 'Enviar tokens' },
   { name: 'Documentos', href: '/documents', icon: FileText, description: 'Gestionar documentos' },
+  { name: 'Bitácoras de Montañismo', href: '/mountain-logs', icon: Mountain, description: 'Registrar expediciones de montañismo' },
   { name: 'Configuración', href: '/settings', icon: Settings, description: 'Ajustes y preferencias' },
 ]
 

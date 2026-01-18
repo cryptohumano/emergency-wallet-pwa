@@ -2,7 +2,7 @@
  * Componente para seleccionar y aplicar tipo de firma
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -35,6 +35,25 @@ export default function SignatureSelector({
   const [signatureImage, setSignatureImage] = useState<string | null>(null)
   const [isSigning, setIsSigning] = useState(false)
   const [activeTab, setActiveTab] = useState<'substrate' | 'autographic'>('substrate')
+
+  // Cargar firma autográfica guardada si existe para la cuenta seleccionada
+  useEffect(() => {
+    const loadSavedAutographicSignature = async () => {
+      if (selectedAccount && activeTab === 'autographic') {
+        try {
+          const { getAutographicSignature } = await import('@/utils/autographicSignatureStorage')
+          const savedSignature = await getAutographicSignature(selectedAccount)
+          if (savedSignature?.signatureImage) {
+            setSignatureImage(savedSignature.signatureImage)
+            console.log('[Signature Selector] Firma autográfica cargada para la cuenta')
+          }
+        } catch (error) {
+          console.warn('[Signature Selector] No se pudo cargar firma autográfica guardada:', error)
+        }
+      }
+    }
+    loadSavedAutographicSignature()
+  }, [selectedAccount, activeTab])
 
   const handleSubstrateSign = async () => {
     if (!selectedAccount) {
@@ -76,19 +95,42 @@ export default function SignatureSelector({
     try {
       setIsSigning(true)
 
-      // Por defecto, colocar la firma en la última página, abajo a la derecha
+      // Agregar firma autográfica en todas las páginas, esquina inferior derecha
       const updatedDocument = await addAutographicSignature({
         document,
         signatureImage,
         position: {
-          page: 0, // Primera página (ajustar según necesidad)
-          x: 120, // mm desde la izquierda
+          page: -1, // -1 significa todas las páginas
+          x: -1, // -1 significa desde la derecha (esquina inferior derecha)
           y: 20, // mm desde abajo
           width: 60,
           height: 30,
         },
         captureGPS: false, // Opcional: capturar GPS
       })
+      
+      // Verificar que la firma se agregó
+      console.log('[Signature Selector] Firma agregada. Documento actualizado:', {
+        signatures: updatedDocument.signatures?.length,
+        pdfSize: updatedDocument.pdfSize,
+      })
+
+      // Si hay una cuenta seleccionada, guardar la firma autográfica para uso futuro
+      // IMPORTANTE: Vincular la firma autográfica a la cuenta
+      if (selectedAccount) {
+        try {
+          const { saveAutographicSignature } = await import('@/utils/autographicSignatureStorage')
+          await saveAutographicSignature(selectedAccount, signatureImage)
+          console.log('[Signature Selector] Firma autográfica guardada y vinculada a la cuenta:', selectedAccount)
+          toast.success('Firma autográfica guardada para esta cuenta')
+        } catch (error) {
+          console.warn('[Signature Selector] No se pudo guardar la firma autográfica:', error)
+          toast.warn('No se pudo guardar la firma autográfica para uso futuro')
+          // No es crítico, continuar
+        }
+      } else {
+        toast.warn('Selecciona una cuenta para vincular la firma autográfica')
+      }
 
       toast.success('Firma autográfica agregada exitosamente')
       onSigned(updatedDocument)
@@ -197,6 +239,53 @@ export default function SignatureSelector({
           </TabsContent>
 
           <TabsContent value="autographic" className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="autographic-account-select">Cuenta para vincular firma autográfica</Label>
+              <Select
+                value={selectedAccount}
+                onValueChange={(value) => {
+                  setSelectedAccount(value)
+                  setSignatureImage(null) // Limpiar firma al cambiar cuenta
+                }}
+              >
+                <SelectTrigger id="autographic-account-select">
+                  <SelectValue placeholder="Selecciona una cuenta">
+                    {selectedAccount && (
+                      <div className="flex items-center gap-2">
+                        <Identicon
+                          value={selectedAccount}
+                          size={16}
+                          theme="polkadot"
+                        />
+                        <span>
+                          {accounts.find(a => a.address === selectedAccount)?.meta?.name || 
+                           `${selectedAccount.slice(0, 8)}...${selectedAccount.slice(-6)}`}
+                        </span>
+                      </div>
+                    )}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.map((account) => (
+                    <SelectItem key={account.address} value={account.address}>
+                      <div className="flex items-center gap-2">
+                        <Identicon
+                          value={account.address}
+                          size={16}
+                          theme="polkadot"
+                        />
+                        <span>{account.meta?.name || account.address}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedAccount && (
+                <p className="text-xs text-muted-foreground">
+                  La firma autográfica se vinculará a esta cuenta y se usará automáticamente al firmar con Substrate
+                </p>
+              )}
+            </div>
             {signatureImage ? (
               <div className="space-y-4">
                 <div className="border rounded-lg p-4 bg-white">

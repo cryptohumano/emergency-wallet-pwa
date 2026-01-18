@@ -106,6 +106,14 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB (aumentado de 2 MB por defecto)
         runtimeCaching: [
           {
+            // Excluir servicios de mapas del cache (pueden fallar y causar problemas)
+            urlPattern: /^https:\/\/.*staticmap\.openstreetmap\.(de|org|fr)\/.*/,
+            handler: 'NetworkOnly',
+            options: {
+              cacheName: 'map-cache',
+            }
+          },
+          {
             urlPattern: /^https:\/\/.*/,
             handler: 'NetworkFirst',
             options: {

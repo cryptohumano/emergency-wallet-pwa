@@ -12,6 +12,7 @@ import {
   Plane,
   Heart,
   Award,
+  Mountain,
   Settings,
 } from 'lucide-react'
 
@@ -25,6 +26,7 @@ const navigation = [
   { name: 'Contactos', href: '/contacts', icon: Users },
   { name: 'Documentos', href: '/documents', icon: FileText },
   { name: 'Flight Logs', href: '/flight-logs', icon: Plane },
+  { name: 'Bitácoras de Montañismo', href: '/mountain-logs', icon: Mountain },
   { name: 'Expedientes Médicos', href: '/medical-records', icon: Heart },
   { name: 'Atestaciones', href: '/attestations', icon: Award },
   { name: 'Configuración', href: '/settings', icon: Settings },
