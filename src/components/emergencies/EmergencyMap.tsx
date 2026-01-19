@@ -166,53 +166,99 @@ export function EmergencyMap({ emergency, className }: EmergencyMapProps) {
       return
     }
 
+    // Verificar que el contenedor esté en el DOM
+    if (!mapRef.current.parentElement) {
+      console.warn('[EmergencyMap] ⚠️ Contenedor del mapa no está en el DOM')
+      return
+    }
+
     const emergencyLocation = emergency.location
     const center: [number, number] = [emergencyLocation.latitude, emergencyLocation.longitude]
 
     console.log('[EmergencyMap] 🗺️ Inicializando mapa en:', center)
 
-    // Asegurar que el contenedor tenga altura
+    // Asegurar que el contenedor tenga altura y esté visible
     if (mapRef.current) {
       mapRef.current.style.height = '256px'
       mapRef.current.style.width = '100%'
+      // Asegurar que el contenedor sea visible
+      if (mapRef.current.offsetParent === null) {
+        console.warn('[EmergencyMap] ⚠️ Contenedor no es visible, esperando...')
+        // Esperar a que el contenedor sea visible
+        const checkVisibility = setInterval(() => {
+          if (mapRef.current && mapRef.current.offsetParent !== null) {
+            clearInterval(checkVisibility)
+            // Reiniciar el efecto cuando el contenedor sea visible
+            setTimeout(() => {
+              if (mapRef.current && !mapInstanceRef.current) {
+                initializeMap()
+              }
+            }, 100)
+          }
+        }, 100)
+        return () => clearInterval(checkVisibility)
+      }
     }
 
-    // Crear mapa
-    const map = L.map(mapRef.current, {
-      center,
-      zoom: 13,
-      zoomControl: true,
-      // Opciones adicionales para asegurar que se renderice
-      preferCanvas: false,
-    })
+    const initializeMap = () => {
+      if (!mapRef.current || mapInstanceRef.current) {
+        return
+      }
 
-    // Agregar capa de OpenStreetMap
-    // Usar un tile server que funcione correctamente
-    const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-      maxZoom: 19,
-      // Agregar opciones para evitar problemas de CORS y caché
-      crossOrigin: true,
-      noWrap: false,
-    })
-    
-    tileLayer.addTo(map)
+      try {
+        // Crear mapa
+        const map = L.map(mapRef.current, {
+          center,
+          zoom: 13,
+          zoomControl: true,
+          // Opciones adicionales para asegurar que se renderice
+          preferCanvas: false,
+        })
 
-    // Forzar invalidación del tamaño del mapa después de un pequeño delay
-    setTimeout(() => {
-      map.invalidateSize()
-      console.log('[EmergencyMap] ✅ Mapa invalidado y tamaño ajustado')
-    }, 100)
+        // Agregar capa de OpenStreetMap
+        const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap contributors',
+          maxZoom: 19,
+          crossOrigin: true,
+          noWrap: false,
+        })
+        
+        tileLayer.addTo(map)
 
-    mapInstanceRef.current = map
+        mapInstanceRef.current = map
 
-    console.log('[EmergencyMap] ✅ Mapa inicializado correctamente')
+        console.log('[EmergencyMap] ✅ Mapa inicializado correctamente')
+
+        // Forzar invalidación del tamaño del mapa después de que esté completamente renderizado
+        // Usar requestAnimationFrame para asegurar que el DOM esté listo
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            if (mapInstanceRef.current && mapRef.current) {
+              try {
+                mapInstanceRef.current.invalidateSize()
+                console.log('[EmergencyMap] ✅ Mapa invalidado y tamaño ajustado')
+              } catch (error) {
+                console.warn('[EmergencyMap] ⚠️ Error al invalidar tamaño del mapa:', error)
+              }
+            }
+          }, 200) // Aumentar delay para asegurar que el mapa esté listo
+        })
+      } catch (error) {
+        console.error('[EmergencyMap] ❌ Error al inicializar mapa:', error)
+      }
+    }
+
+    initializeMap()
 
     // Limpiar al desmontar
     return () => {
       console.log('[EmergencyMap] 🧹 Limpiando mapa')
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove()
+        try {
+          mapInstanceRef.current.remove()
+        } catch (error) {
+          console.warn('[EmergencyMap] ⚠️ Error al remover mapa:', error)
+        }
         mapInstanceRef.current = null
       }
     }
