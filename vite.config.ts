@@ -112,23 +112,36 @@ export default defineConfig({
         // Esto previene que Workbox intente procesar estas URLs
         navigateFallbackAllowlist: undefined,
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB (aumentado de 2 MB por defecto)
+        // Excluir completamente servicios de mapas del procesamiento de Workbox
+        // Estos servicios pueden fallar y causar errores en el service worker
+        exclude: [
+          /^https:\/\/.*staticmap\.openstreetmap\.(de|org|fr)\/.*/,
+          /^https:\/\/.*\.tile\.openstreetmap\.org\/.*/,
+          /^https:\/\/.*\.openstreetmap\.org\/.*/,
+        ],
         runtimeCaching: [
           {
-            // Regla específica para staticmap - NetworkOnly para que no intente cachear
-            // Esta regla debe ir ANTES de la regla general para tener prioridad
+            // Regla específica para staticmap - NetworkOnly y manejo de errores
             urlPattern: /^https:\/\/.*staticmap\.openstreetmap\.(de|org|fr)\/.*/,
             handler: 'NetworkOnly',
             options: {
               // No cachear nada, solo intentar la red
-              // Si falla, el error se propaga normalmente al componente sin que Workbox interfiera
+              // Si falla, no intentar cachear el error
+              cacheableResponse: {
+                statuses: [200]
+              }
             }
           },
           {
             // Regla general para otros recursos externos
-            // Excluir explícitamente staticmap para que use la regla anterior (NetworkOnly)
+            // Excluir explícitamente staticmap y tiles de OpenStreetMap
             urlPattern: ({ url }: { url: URL }) => {
-              // Solo procesar URLs HTTPS que NO sean de staticmap
-              return url.protocol === 'https:' && !url.hostname.includes('staticmap.openstreetmap')
+              // Solo procesar URLs HTTPS que NO sean de servicios de mapas
+              const isMapService = 
+                url.hostname.includes('staticmap.openstreetmap') ||
+                url.hostname.includes('tile.openstreetmap.org') ||
+                url.hostname.includes('openstreetmap.org')
+              return url.protocol === 'https:' && !isMapService
             },
             handler: 'NetworkFirst',
             options: {
