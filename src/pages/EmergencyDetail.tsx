@@ -272,7 +272,22 @@ export default function EmergencyDetail() {
             <div>
               <h3 className="font-semibold mb-2">Información Adicional</h3>
               <pre className="text-xs bg-muted p-2 rounded overflow-auto">
-                {JSON.stringify(emergency.metadata, null, 2)}
+                {(() => {
+                  // Función helper para serializar BigInt
+                  const safeStringify = (obj: any, space?: number): string => {
+                    return JSON.stringify(
+                      obj,
+                      (key, value) => {
+                        if (typeof value === 'bigint') {
+                          return value.toString() + 'n'
+                        }
+                        return value
+                      },
+                      space
+                    )
+                  }
+                  return safeStringify(emergency.metadata, 2)
+                })()}
               </pre>
             </div>
           )}
