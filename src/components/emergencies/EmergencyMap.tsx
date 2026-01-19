@@ -155,36 +155,68 @@ export function EmergencyMap({ emergency, className }: EmergencyMapProps) {
 
   // Inicializar mapa
   useEffect(() => {
-    if (!mapRef.current) return
+    if (!mapRef.current) {
+      console.warn('[EmergencyMap] ⚠️ mapRef.current no está disponible')
+      return
+    }
+
+    // Verificar que Leaflet esté disponible
+    if (typeof L === 'undefined') {
+      console.error('[EmergencyMap] ❌ Leaflet no está disponible')
+      return
+    }
 
     const emergencyLocation = emergency.location
     const center: [number, number] = [emergencyLocation.latitude, emergencyLocation.longitude]
+
+    console.log('[EmergencyMap] 🗺️ Inicializando mapa en:', center)
+
+    // Asegurar que el contenedor tenga altura
+    if (mapRef.current) {
+      mapRef.current.style.height = '256px'
+      mapRef.current.style.width = '100%'
+    }
 
     // Crear mapa
     const map = L.map(mapRef.current, {
       center,
       zoom: 13,
       zoomControl: true,
+      // Opciones adicionales para asegurar que se renderice
+      preferCanvas: false,
     })
 
     // Agregar capa de OpenStreetMap
     // Usar un tile server que funcione correctamente
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
       maxZoom: 19,
       // Agregar opciones para evitar problemas de CORS y caché
       crossOrigin: true,
       noWrap: false,
-    }).addTo(map)
+    })
+    
+    tileLayer.addTo(map)
+
+    // Forzar invalidación del tamaño del mapa después de un pequeño delay
+    setTimeout(() => {
+      map.invalidateSize()
+      console.log('[EmergencyMap] ✅ Mapa invalidado y tamaño ajustado')
+    }, 100)
 
     mapInstanceRef.current = map
 
+    console.log('[EmergencyMap] ✅ Mapa inicializado correctamente')
+
     // Limpiar al desmontar
     return () => {
-      map.remove()
-      mapInstanceRef.current = null
+      console.log('[EmergencyMap] 🧹 Limpiando mapa')
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove()
+        mapInstanceRef.current = null
+      }
     }
-  }, [])
+  }, [emergency.location.latitude, emergency.location.longitude]) // Dependencias específicas
 
   // Actualizar mapa cuando se carga el log o cambia la emergencia
   useEffect(() => {

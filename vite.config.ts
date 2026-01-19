@@ -238,6 +238,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // Asegurar que buffer se resuelva correctamente
+      buffer: 'buffer',
     },
   },
   define: {
@@ -252,6 +254,26 @@ export default defineConfig({
       },
     },
     include: ['buffer'],
+  },
+  // Configuración para no externalizar buffer
+  build: {
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    },
+    rollupOptions: {
+      output: {
+        // No externalizar buffer
+        external: [],
+      },
+    },
+  },
+  // Configuración para manejar módulos Node.js en el navegador
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      // Asegurar que buffer se resuelva correctamente
+      buffer: 'buffer',
+    },
   },
   build: {
     commonjsOptions: {
