@@ -114,7 +114,7 @@ export function useEmergency() {
         client,
         selectedAccount.pair,
         emergency,
-        logData // Pasar datos de la bitácora para incluir en el remark
+        undefined // No hay datos de bitácora en Emergency Wallet
       )
 
       // 3. Actualizar emergencia con resultado

@@ -231,23 +231,50 @@ export function serializeEmergencyToRemark(data: EmergencyRemarkData): string {
  */
 export function parseEmergencyFromRemark(remark: string): EmergencyRemarkData | null {
   try {
+    console.log('[parseEmergencyFromRemark] 🔍 Iniciando parseo de remark')
+    console.log('[parseEmergencyFromRemark] 📝 Longitud:', remark.length)
+    console.log('[parseEmergencyFromRemark] 📝 Primeros 100 caracteres:', remark.substring(0, 100))
+    
     // Verificar prefijo
-    if (!remark.startsWith(EMERGENCY_REMARK_PREFIX + EMERGENCY_REMARK_SEPARATOR)) {
+    const expectedPrefix = EMERGENCY_REMARK_PREFIX + EMERGENCY_REMARK_SEPARATOR
+    if (!remark.startsWith(expectedPrefix)) {
+      console.log('[parseEmergencyFromRemark] ❌ No tiene prefijo esperado:', expectedPrefix)
+      console.log('[parseEmergencyFromRemark] 📝 Prefijo encontrado:', remark.substring(0, Math.min(20, remark.length)))
       return null
     }
+    
+    console.log('[parseEmergencyFromRemark] ✅ Prefijo correcto encontrado')
     
     // Extraer JSON
     const jsonPart = remark.substring(EMERGENCY_REMARK_PREFIX.length + EMERGENCY_REMARK_SEPARATOR.length)
+    console.log('[parseEmergencyFromRemark] 📝 JSON extraído (primeros 200 chars):', jsonPart.substring(0, 200))
+    
     const parsed = JSON.parse(jsonPart) as EmergencyRemarkFormat
+    console.log('[parseEmergencyFromRemark] ✅ JSON parseado correctamente')
     
     // Validar estructura
-    if (parsed.prefix !== EMERGENCY_REMARK_PREFIX || !parsed.data) {
+    if (parsed.prefix !== EMERGENCY_REMARK_PREFIX) {
+      console.log('[parseEmergencyFromRemark] ❌ Prefijo en JSON no coincide:', parsed.prefix, 'vs', EMERGENCY_REMARK_PREFIX)
       return null
     }
     
+    if (!parsed.data) {
+      console.log('[parseEmergencyFromRemark] ❌ No hay datos en el JSON parseado')
+      return null
+    }
+    
+    console.log('[parseEmergencyFromRemark] ✅ Datos de emergencia válidos:', {
+      emergencyId: parsed.data.emergencyId,
+      type: parsed.data.type,
+      reporterAccount: parsed.data.reporterAccount,
+    })
+    
     return parsed.data
   } catch (error) {
-    console.error('[Emergency] Error al parsear remark:', error)
+    console.error('[parseEmergencyFromRemark] ❌ Error al parsear remark:', error)
+    if (error instanceof SyntaxError) {
+      console.error('[parseEmergencyFromRemark] ❌ Error de sintaxis JSON:', error.message)
+    }
     return null
   }
 }

@@ -101,7 +101,7 @@ export function getChainSymbol(chainNameOrEndpoint: string | null | undefined): 
  * @param options Opciones de formateo
  */
 export function formatBalanceFromPlancks(
-  value: bigint | string | number,
+  value: bigint | string | number | null | undefined,
   chainName?: string | null,
   options: {
     withUnit?: boolean
@@ -109,6 +109,11 @@ export function formatBalanceFromPlancks(
     forceUnit?: string
   } = {}
 ): string {
+  // Validar que el valor sea válido
+  if (value === null || value === undefined) {
+    return '0'
+  }
+
   const decimals = options.decimals ?? getChainDecimals(chainName)
   const unit = options.forceUnit ?? getChainSymbol(chainName)
   
@@ -116,17 +121,27 @@ export function formatBalanceFromPlancks(
   const valueStr = typeof value === 'bigint' 
     ? value.toString() 
     : typeof value === 'number' 
-    ? value.toString() 
-    : value
+    ? (isNaN(value) || !isFinite(value) ? '0' : value.toString())
+    : (value || '0')
 
-  // Usar formatBalance de @polkadot/util
-  const formatted = formatBalance(valueStr, {
-    decimals,
-    withUnit: options.withUnit ?? true,
-    forceUnit: unit,
-  })
+  // Validar que el string no esté vacío
+  if (!valueStr || valueStr.trim() === '') {
+    return '0'
+  }
 
-  return formatted
+  try {
+    // Usar formatBalance de @polkadot/util
+    const formatted = formatBalance(valueStr, {
+      decimals,
+      withUnit: options.withUnit ?? true,
+      forceUnit: unit,
+    })
+
+    return formatted
+  } catch (error) {
+    console.error('Error formatting balance:', error, { value, valueStr, decimals, unit })
+    return '0'
+  }
 }
 
 /**
@@ -161,7 +176,7 @@ export function parseBalanceToPlancks(
  * @param chainName Nombre de la cadena
  */
 export function formatBalanceForDisplay(
-  value: bigint | string | number,
+  value: bigint | string | number | null | undefined,
   chainName?: string | null
 ): string {
   return formatBalanceFromPlancks(value, chainName, {

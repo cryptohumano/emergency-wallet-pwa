@@ -62,10 +62,10 @@ const getBase = () => {
   }
   
   // Fallback: si no hay GITHUB_REPOSITORY pero estamos en build, usar el nombre del repo
-  // El repositorio es andino-wallet-pwa según el package.json
+  // El repositorio es emergency-wallet-pwa según el package.json
   // Hardcodeamos el base path para GitHub Pages
   // Cambiar esto si el nombre del repositorio cambia
-  return '/andino-wallet-pwa/'
+  return '/emergency-wallet-pwa/'
 }
 
 // Calcular el base path dinámicamente (se recalcula cada vez que se accede)
@@ -82,7 +82,7 @@ console.log('[Vite Config] VITE_BASE_URL:', process.env.VITE_BASE_URL)
 if (process.env.NODE_ENV === 'production' && (!basePath || basePath === '/')) {
   console.warn('[Vite Config] ⚠️ Base path es "/". Si estás desplegando en GitHub Pages, esto podría causar problemas.')
   console.warn('[Vite Config] GITHUB_REPOSITORY debería estar configurado en el workflow de GitHub Actions.')
-  console.warn('[Vite Config] Usando fallback: /andino-wallet-pwa/')
+  console.warn('[Vite Config] Usando fallback: /emergency-wallet-pwa/')
 }
 
 // https://vite.dev/config/
@@ -90,7 +90,7 @@ export default defineConfig({
   base: basePath,
   server: {
     host: '0.0.0.0', // Permitir acceso desde la red local
-    port: 5173,
+    port: 9110,
     // Deshabilitar HTTPS para desarrollo (comentar si necesitas HTTPS)
     // https: httpsConfig || undefined,
     strictPort: true,
@@ -100,7 +100,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      includeAssets: ['favicon.ico', 'favicon.svg', 'apple-touch-icon.png'],
       base: getBase(),
       scope: getBase(),
       strategies: 'generateSW',
@@ -145,32 +145,38 @@ export default defineConfig({
         ]
       },
       manifest: {
-        name: 'Aura Wallet',
-        short_name: 'Aura Wallet',
-        description: 'Wallet criptográfica segura y privada para redes Substrate/Polkadot con WebAuthn, multi-cadena y gestión de identidad',
-        theme_color: '#6366f1',
+        name: 'Emergency Wallet',
+        short_name: 'EmergencyWallet',
+        description: 'PWA para detectar y gestionar emergencias en blockchain',
+        theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'any',
         start_url: getBase(),
-        categories: ['finance', 'utilities', 'productivity'],
+        categories: ['utilities', 'productivity', 'emergency'],
         lang: 'es',
         dir: 'ltr',
         icons: [
           {
-            src: 'pwa-192x192.png',
+            src: 'web-app-manifest-192x192.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'web-app-manifest-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'maskable'
+          },
+          {
+            src: 'web-app-manifest-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'web-app-manifest-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
@@ -179,32 +185,18 @@ export default defineConfig({
         screenshots: [],
         shortcuts: [
           {
-            name: 'Inicio',
-            short_name: 'Inicio',
-            description: 'Ver resumen de cuentas y balances',
+            name: 'Radio Blockchain',
+            short_name: 'Radio',
+            description: 'Monitor de eventos de blockchain',
             url: basePath,
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+            icons: [{ src: 'web-app-manifest-192x192.png', sizes: '192x192' }]
           },
           {
-            name: 'Enviar',
-            short_name: 'Enviar',
-            description: 'Enviar tokens a otra dirección',
-            url: basePath + 'send',
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
-          },
-          {
-            name: 'Cuentas',
-            short_name: 'Cuentas',
-            description: 'Gestionar cuentas del wallet',
-            url: basePath + 'accounts',
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
-          },
-          {
-            name: 'Identidad',
-            short_name: 'Identidad',
-            description: 'Gestionar identidad y privacidad',
-            url: basePath + 'identity',
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+            name: 'Emergencias',
+            short_name: 'Emergencias',
+            description: 'Ver emergencias detectadas',
+            url: basePath + 'emergencies',
+            icons: [{ src: 'web-app-manifest-192x192.png', sizes: '192x192' }]
           }
         ]
       },

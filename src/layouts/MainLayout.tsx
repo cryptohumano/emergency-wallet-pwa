@@ -5,10 +5,14 @@ import { BottomNav } from '@/components/layout/BottomNav'
 import { AuthGuard } from '@/components/auth/AuthGuard'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { useKeyringContext } from '@/contexts/KeyringContext'
+import { useRemarkListener } from '@/hooks/useRemarkListener'
 
 export default function MainLayout() {
   const isMobile = useIsMobile()
   const { isUnlocked } = useKeyringContext()
+  
+  // Iniciar escucha de emergencias cuando la wallet esté desbloqueada
+  useRemarkListener()
 
   return (
     <AuthGuard>
