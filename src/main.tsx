@@ -28,6 +28,7 @@ import { router } from './router'
 import { KeyringProvider } from './contexts/KeyringContext'
 import { NetworkProvider } from './contexts/NetworkContext'
 import { ActiveAccountProvider } from './contexts/ActiveAccountContext'
+import { RemarkListenerProvider } from './contexts/RemarkListenerContext'
 import { Toaster } from '@/components/ui/sonner'
 
 createRoot(document.getElementById('root')!).render(
@@ -35,8 +36,10 @@ createRoot(document.getElementById('root')!).render(
     <KeyringProvider>
       <ActiveAccountProvider>
         <NetworkProvider>
-          <RouterProvider router={router} />
-          <Toaster />
+          <RemarkListenerProvider>
+            <RouterProvider router={router} />
+            <Toaster />
+          </RemarkListenerProvider>
         </NetworkProvider>
       </ActiveAccountProvider>
     </KeyringProvider>

@@ -31,6 +31,9 @@ export interface RemarkListenerCallbacks {
   debugMode?: boolean
 }
 
+// Singleton global para evitar múltiples instancias
+let globalListenerInstance: RemarkListener | null = null
+
 export class RemarkListener {
   private api: ApiPromise | null = null
   private provider: WsProvider | null = null
@@ -47,6 +50,26 @@ export class RemarkListener {
   private processedEvents: Set<string> = new Set() // Track de eventos ya procesados para evitar duplicados
 
   /**
+   * Obtiene la instancia singleton del listener
+   */
+  public static getInstance(): RemarkListener {
+    if (!globalListenerInstance) {
+      globalListenerInstance = new RemarkListener()
+    }
+    return globalListenerInstance
+  }
+
+  /**
+   * Resetea la instancia singleton (útil para testing)
+   */
+  public static resetInstance(): void {
+    if (globalListenerInstance) {
+      globalListenerInstance.stop()
+      globalListenerInstance = null
+    }
+  }
+
+  /**
    * Inicia la escucha de eventos System.Remarked
    */
   public async start(
@@ -54,8 +77,19 @@ export class RemarkListener {
     activeAccount: string | null,
     callbacks: RemarkListenerCallbacks
   ): Promise<void> {
+    // Si ya está escuchando con el mismo endpoint y cuenta, no reiniciar
+    if (this.isListening && this.activeAccount === activeAccount) {
+      const currentEndpoint = this.provider?.endpoint || ''
+      if (currentEndpoint === endpoint) {
+        console.log('[RemarkListener] ✅ Ya está escuchando con el mismo endpoint y cuenta, reutilizando conexión')
+        // Actualizar callbacks por si cambiaron
+        this.callbacks = callbacks
+        return
+      }
+    }
+    
     if (this.isListening) {
-      console.log('[RemarkListener] ⚠️ Ya está escuchando, deteniendo antes de reiniciar...')
+      console.log('[RemarkListener] ⚠️ Ya está escuchando con diferente endpoint/cuenta, deteniendo antes de reiniciar...')
       this.stop()
     }
 
@@ -592,19 +626,9 @@ export class RemarkListener {
     blockNumber: number
   ): Promise<void> {
     try {
-      // Verificar si ya existe una emergencia con el mismo blockHash y extrinsicIndex
-      // Esto previene guardar duplicados si el mismo evento se procesa múltiples veces
-      // Usar una verificación más estricta: blockHash + blockNumber + extrinsicIndex
-      const { getAllEmergencies } = await import('@/utils/emergencyStorage')
-      const existingEmergencies = await getAllEmergencies()
-      
-      // Buscar duplicados con múltiples criterios
-      const duplicate = existingEmergencies.find(
-        (e) =>
-          e.blockchainTxHash === blockHash &&
-          e.blockchainExtrinsicIndex === extrinsicIndex &&
-          e.blockchainBlockNumber === blockNumber
-      )
+      // Verificar duplicados usando función optimizada
+      const { getEmergencyByBlockchainRef } = await import('@/utils/emergencyStorage')
+      const duplicate = await getEmergencyByBlockchainRef(blockHash, extrinsicIndex, blockNumber)
 
       if (duplicate) {
         console.log('[RemarkListener] ⏭️ Emergencia ya existe en IndexedDB, omitiendo guardado duplicado:', {
@@ -612,16 +636,14 @@ export class RemarkListener {
           blockHash: blockHash.substring(0, 20) + '...',
           blockNumber,
           extrinsicIndex,
-          totalEmergencias: existingEmergencies.length,
         })
         return
       }
 
       // Verificación adicional: buscar por emergencyId del remarkData (si existe)
       if (remarkData.emergencyId) {
-        const duplicateById = existingEmergencies.find(
-          (e) => e.emergencyId === remarkData.emergencyId
-        )
+        const { getEmergency } = await import('@/utils/emergencyStorage')
+        const duplicateById = await getEmergency(remarkData.emergencyId)
         if (duplicateById) {
           console.log('[RemarkListener] ⏭️ Emergencia ya existe por ID, omitiendo:', {
             emergencyId: remarkData.emergencyId,

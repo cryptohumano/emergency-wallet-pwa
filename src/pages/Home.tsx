@@ -9,7 +9,7 @@ import { AlertTriangle, Activity } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useActiveAccount } from '@/contexts/ActiveAccountContext'
 import { useEmergency } from '@/hooks/useEmergency'
-import { useRemarkListener } from '@/hooks/useRemarkListener'
+import { useRemarkListenerContext } from '@/contexts/RemarkListenerContext'
 import { useCurrentChainBalance } from '@/hooks/useMultiChainBalances'
 import { useNetwork } from '@/contexts/NetworkContext'
 import { formatBalanceForDisplay, getChainSymbol } from '@/utils/balance'
@@ -21,7 +21,7 @@ import { BlockchainRadioMonitor } from '@/components/BlockchainRadioMonitor'
 export default function Home() {
   const { activeAccount } = useActiveAccount()
   const { emergencies } = useEmergency()
-  const { isListening } = useRemarkListener()
+  const { isListening } = useRemarkListenerContext()
   const { selectedChain } = useNetwork()
   const { balance } = useCurrentChainBalance(activeAccount)
 

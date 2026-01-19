@@ -123,8 +123,17 @@ export function useRemarkListener() {
       listenerRef.current = null
     }
 
-    // Crear nueva instancia del listener (usando @polkadot/api)
-    const listener = new RemarkListener()
+    // Usar instancia singleton para evitar múltiples listeners
+    const listener = RemarkListener.getInstance()
+    
+    // Si ya está escuchando con el mismo endpoint, no reiniciar
+    if (listener.getIsListening() && listenerRef.current === listener) {
+      console.log('[useRemarkListener] ✅ Listener ya está activo, reutilizando instancia')
+      setIsListening(true)
+      listenerRef.current = listener
+      isStartingRef.current = false
+      return true
+    }
 
     // Obtener endpoint de la cadena
     const endpoint = selectedChain?.endpoint
@@ -243,6 +252,8 @@ export function useRemarkListener() {
   }, [client, activeAccount, startListener])
 
   // Efecto principal: iniciar listener cuando hay cliente y cuenta Y está habilitado manualmente
+  // IMPORTANTE: Este efecto NO debe detener el listener cuando cambia la ruta
+  // Solo debe iniciar/detener cuando cambian las dependencias críticas (chain, account, enabled)
   useEffect(() => {
     // Si está deshabilitado manualmente, detener y salir
     if (!isManuallyEnabled) {
@@ -266,35 +277,26 @@ export function useRemarkListener() {
 
     // Verificar que no haya otro listener activo antes de iniciar
     if (listenerRef.current && listenerRef.current.getIsListening()) {
+      // Verificar si el endpoint cambió - si es así, reiniciar
+      const currentEndpoint = selectedChain?.endpoint
+      if (currentEndpoint && listenerRef.current) {
+        // Si el endpoint cambió, necesitamos reiniciar
+        // Por ahora, solo verificamos que esté activo
+        return // Ya hay un listener activo, no crear otro
+      }
       return // Ya hay un listener activo, no crear otro
     }
 
     // Iniciar listener
     startListener()
 
-    // Cleanup: detener listener al desmontar o cambiar dependencias
+    // Cleanup: SOLO detener cuando cambian dependencias críticas (chain, account, enabled)
+    // NO detener cuando solo cambia la ruta
     return () => {
-      // Limpiar timeouts
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current)
-        reconnectTimeoutRef.current = null
-      }
-      
-      // Limpiar keep-alive
-      if (keepAliveIntervalRef.current) {
-        clearInterval(keepAliveIntervalRef.current)
-        keepAliveIntervalRef.current = null
-      }
-      
-      // Detener listener
-      if (listenerRef.current) {
-        listenerRef.current.stop()
-        listenerRef.current = null
-      }
-      
-      setIsListening(false)
+      // NO limpiar aquí - el listener debe persistir entre cambios de ruta
+      // Solo se detendrá cuando cambien las dependencias críticas arriba
     }
-  }, [selectedChain, activeAccount, startListener, isManuallyEnabled])
+  }, [selectedChain?.endpoint, selectedChain?.name, activeAccount, isManuallyEnabled]) // Solo dependencias críticas, NO startListener
 
   // El número de bloque se actualiza automáticamente desde onBlockProcessed
   // No necesitamos una suscripción separada

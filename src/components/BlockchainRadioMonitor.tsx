@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Radio, Activity, AlertTriangle, X, Power, PowerOff, MapPin, Clock, ExternalLink, Bell, BellOff } from 'lucide-react'
-import { useRemarkListener } from '@/hooks/useRemarkListener'
+import { useRemarkListenerContext } from '@/contexts/RemarkListenerContext'
 import { formatDistanceToNow, format } from 'date-fns'
 import { es } from 'date-fns/locale/es'
 import { useState, useMemo, useEffect } from 'react'
@@ -30,7 +30,7 @@ export function BlockchainRadioMonitor() {
     isManuallyEnabled,
     startListener,
     stopListener
-  } = useRemarkListener()
+  } = useRemarkListenerContext()
   const [isExpanded, setIsExpanded] = useState(false)
   const [filter, setFilter] = useState<'all' | 'System.Remarked' | 'emergencies'>('all')
   const [selectedEmergency, setSelectedEmergency] = useState<Emergency | null>(null)

@@ -168,9 +168,13 @@ export function EmergencyMap({ emergency, className }: EmergencyMapProps) {
     })
 
     // Agregar capa de OpenStreetMap
+    // Usar un tile server que funcione correctamente
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
       maxZoom: 19,
+      // Agregar opciones para evitar problemas de CORS y caché
+      crossOrigin: true,
+      noWrap: false,
     }).addTo(map)
 
     mapInstanceRef.current = map
@@ -217,14 +221,17 @@ export function EmergencyMap({ emergency, className }: EmergencyMapProps) {
         // Agregar marcador de inicio (verde)
         if (routePoints.length > 0) {
           const startPoint = routePoints[0]
-          L.marker(startPoint, {
-            icon: L.icon({
-              iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
-              shadowUrl: iconShadow,
-              iconSize: [25, 41],
-              iconAnchor: [12, 41],
-            })
-          }).addTo(map).bindPopup('Inicio de la ruta')
+          const greenIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+            shadowUrl: iconShadow,
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+          })
+          L.marker(startPoint, { icon: greenIcon })
+            .addTo(map)
+            .bindPopup('Inicio de la ruta')
         }
       }
     }

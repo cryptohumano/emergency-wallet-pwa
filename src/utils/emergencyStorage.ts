@@ -217,6 +217,49 @@ export async function updateEmergency(emergency: Emergency): Promise<void> {
 }
 
 /**
+ * Obtiene una emergencia por referencia blockchain (blockHash, extrinsicIndex, blockNumber)
+ * Esta función es más eficiente que getAllEmergencies para verificar duplicados
+ */
+export async function getEmergencyByBlockchainRef(
+  blockHash: string,
+  extrinsicIndex: number,
+  blockNumber: number
+): Promise<Emergency | null> {
+  const db = await openDB()
+  
+  if (!db.objectStoreNames.contains(STORE_NAME)) {
+    console.warn(`[Emergency Storage] ⚠️ Object store '${STORE_NAME}' no existe.`)
+    return null
+  }
+  
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORE_NAME], 'readonly')
+    const store = transaction.objectStore(STORE_NAME)
+    const request = store.openCursor()
+    
+    request.onsuccess = (event) => {
+      const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result
+      if (cursor) {
+        const emergency: Emergency = cursor.value
+        if (
+          emergency.blockchainTxHash === blockHash &&
+          emergency.blockchainExtrinsicIndex === extrinsicIndex &&
+          emergency.blockchainBlockNumber === blockNumber
+        ) {
+          resolve(emergency)
+          return
+        }
+        cursor.continue()
+      } else {
+        resolve(null)
+      }
+    }
+    
+    request.onerror = () => reject(request.error)
+  })
+}
+
+/**
  * Elimina una emergencia
  */
 export async function deleteEmergency(emergencyId: string): Promise<void> {
