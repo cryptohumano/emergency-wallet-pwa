@@ -99,12 +99,21 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    VitePWA({
+      VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'favicon.svg', 'apple-touch-icon.png'],
+      includeAssets: [
+        'favicon.ico', 
+        'favicon.svg', 
+        'favicon-96x96.png',
+        'apple-touch-icon.png',
+        'web-app-manifest-192x192.png',
+        'web-app-manifest-512x512.png',
+        'site.webmanifest'
+      ],
       base: getBase(),
       scope: getBase(),
       strategies: 'generateSW',
+      injectRegister: 'auto',
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
         navigateFallback: basePath === '/' ? '/index.html' : basePath + 'index.html',
@@ -221,7 +230,10 @@ export default defineConfig({
       devOptions: {
         enabled: true,
         type: 'module',
-      }
+      },
+      // Configuración para hacer la PWA instalable
+      injectRegister: 'auto',
+      injectManifest: false
     })
   ],
   resolve: {
