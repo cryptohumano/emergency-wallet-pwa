@@ -111,14 +111,7 @@ export default defineConfig({
         // Excluir servicios de mapas del procesamiento de Workbox completamente
         // Esto previene que Workbox intente procesar estas URLs
         navigateFallbackAllowlist: undefined,
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB (aumentado de 2 MB por defecto)
-        // Excluir completamente servicios de mapas del procesamiento de Workbox
-        // Estos servicios pueden fallar y causar errores en el service worker
-        exclude: [
-          /^https:\/\/.*staticmap\.openstreetmap\.(de|org|fr)\/.*/,
-          /^https:\/\/.*\.tile\.openstreetmap\.org\/.*/,
-          /^https:\/\/.*\.openstreetmap\.org\/.*/,
-        ],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
         runtimeCaching: [
           {
             // Regla específica para staticmap - NetworkOnly y manejo de errores
