@@ -88,6 +88,7 @@ if (process.env.NODE_ENV === 'production' && (!basePath || basePath === '/')) {
 // https://vite.dev/config/
 export default defineConfig({
   base: basePath,
+  publicDir: 'public', // Asegurar que la carpeta public se copie correctamente
   server: {
     host: '0.0.0.0', // Permitir acceso desde la red local
     port: 9110,
@@ -114,12 +115,23 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
         runtimeCaching: [
           {
-            // Regla específica para staticmap - NetworkOnly y manejo de errores
+            // Regla específica para staticmap - NO interceptar estas URLs
+            // Workbox no debe procesar estas URLs en absoluto para evitar errores
             urlPattern: /^https:\/\/.*staticmap\.openstreetmap\.(de|org|fr)\/.*/,
             handler: 'NetworkOnly',
             options: {
               // No cachear nada, solo intentar la red
-              // Si falla, no intentar cachear el error
+              // Si falla, devolver error silenciosamente sin cachear
+              cacheableResponse: {
+                statuses: [200]
+              }
+            }
+          },
+          {
+            // Regla para tiles de OpenStreetMap - también NetworkOnly
+            urlPattern: /^https:\/\/.*\.tile\.openstreetmap\.org\/.*/,
+            handler: 'NetworkOnly',
+            options: {
               cacheableResponse: {
                 statuses: [200]
               }
@@ -127,7 +139,7 @@ export default defineConfig({
           },
           {
             // Regla general para otros recursos externos
-            // Excluir explícitamente staticmap y tiles de OpenStreetMap
+            // Excluir explícitamente servicios de mapas de OpenStreetMap
             urlPattern: ({ url }: { url: URL }) => {
               // Solo procesar URLs HTTPS que NO sean de servicios de mapas
               const isMapService = 
