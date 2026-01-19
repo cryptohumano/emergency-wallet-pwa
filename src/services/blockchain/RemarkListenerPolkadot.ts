@@ -683,6 +683,33 @@ export class RemarkListener {
       console.log('[RemarkListener] 💾 Guardando emergencia en IndexedDB...')
       await saveEmergency(emergency)
       
+      // Reconstruir log relacionado si existe relatedLogId pero no tenemos el log
+      if (remarkData.relatedLogId) {
+        try {
+          const { getMountainLog } = await import('@/utils/mountainLogStorage')
+          const existingLog = await getMountainLog(remarkData.relatedLogId)
+          
+          if (!existingLog) {
+            console.log('[RemarkListener] 🔨 Reconstruyendo log relacionado desde remark:', remarkData.relatedLogId)
+            const { reconstructLogFromEmergencyRemark } = await import('@/utils/logReconstruction')
+            const { saveMountainLog } = await import('@/utils/mountainLogStorage')
+            
+            const reconstructedLog = reconstructLogFromEmergencyRemark(remarkData, remarkData.reporterAccount)
+            if (reconstructedLog) {
+              await saveMountainLog(reconstructedLog)
+              console.log('[RemarkListener] ✅ Log reconstruido y guardado:', reconstructedLog.logId)
+            } else {
+              console.warn('[RemarkListener] ⚠️ No se pudo reconstruir el log')
+            }
+          } else {
+            console.log('[RemarkListener] ✅ Log relacionado ya existe:', remarkData.relatedLogId)
+          }
+        } catch (error) {
+          console.warn('[RemarkListener] ⚠️ Error al reconstruir log relacionado:', error)
+          // No fallar si no se puede reconstruir el log
+        }
+      }
+      
       // Consultar identidad del reporter en todas las cadenas disponibles (en segundo plano)
       // Esto no bloquea el guardado de la emergencia
       console.log('[RemarkListener] 🔍 Consultando identidad del reporter (en segundo plano):', remarkData.reporterAccount)
