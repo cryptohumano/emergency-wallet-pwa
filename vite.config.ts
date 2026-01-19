@@ -267,18 +267,5 @@ export default defineConfig({
       },
     },
   },
-  // Configuración para manejar módulos Node.js en el navegador
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      // Asegurar que buffer se resuelva correctamente
-      buffer: 'buffer',
-    },
-  },
-  build: {
-    commonjsOptions: {
-      transformMixedEsModules: true,
-    },
-  },
 })
 
