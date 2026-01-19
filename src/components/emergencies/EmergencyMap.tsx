@@ -166,43 +166,21 @@ export function EmergencyMap({ emergency, className }: EmergencyMapProps) {
       return
     }
 
-    // Verificar que el contenedor esté en el DOM
-    if (!mapRef.current.parentElement) {
-      console.warn('[EmergencyMap] ⚠️ Contenedor del mapa no está en el DOM')
-      return
-    }
-
     const emergencyLocation = emergency.location
     const center: [number, number] = [emergencyLocation.latitude, emergencyLocation.longitude]
 
     console.log('[EmergencyMap] 🗺️ Inicializando mapa en:', center)
 
-    // Asegurar que el contenedor tenga altura y esté visible
+    // Asegurar que el contenedor tenga altura
     if (mapRef.current) {
       mapRef.current.style.height = '256px'
       mapRef.current.style.width = '100%'
-      // Asegurar que el contenedor sea visible
-      if (mapRef.current.offsetParent === null) {
-        console.warn('[EmergencyMap] ⚠️ Contenedor no es visible, esperando...')
-        // Esperar a que el contenedor sea visible
-        const checkVisibility = setInterval(() => {
-          if (mapRef.current && mapRef.current.offsetParent !== null) {
-            clearInterval(checkVisibility)
-            // Reiniciar el efecto cuando el contenedor sea visible
-            setTimeout(() => {
-              if (mapRef.current && !mapInstanceRef.current) {
-                initializeMap()
-              }
-            }, 100)
-          }
-        }, 100)
-        return () => clearInterval(checkVisibility)
-      }
     }
 
+    // Función para inicializar el mapa
     const initializeMap = () => {
       if (!mapRef.current || mapInstanceRef.current) {
-        return
+        return false
       }
 
       try {
@@ -211,7 +189,6 @@ export function EmergencyMap({ emergency, className }: EmergencyMapProps) {
           center,
           zoom: 13,
           zoomControl: true,
-          // Opciones adicionales para asegurar que se renderice
           preferCanvas: false,
         })
 
@@ -229,26 +206,58 @@ export function EmergencyMap({ emergency, className }: EmergencyMapProps) {
 
         console.log('[EmergencyMap] ✅ Mapa inicializado correctamente')
 
-        // Forzar invalidación del tamaño del mapa después de que esté completamente renderizado
-        // Usar requestAnimationFrame para asegurar que el DOM esté listo
-        requestAnimationFrame(() => {
-          setTimeout(() => {
-            if (mapInstanceRef.current && mapRef.current) {
-              try {
+        // Invalidar tamaño después de que el mapa esté listo
+        // Usar múltiples requestAnimationFrame para asegurar que el DOM esté completamente renderizado
+        const invalidateSize = () => {
+          if (mapInstanceRef.current && mapRef.current) {
+            try {
+              // Verificar que el contenedor tenga dimensiones antes de invalidar
+              const rect = mapRef.current.getBoundingClientRect()
+              if (rect.width > 0 && rect.height > 0) {
                 mapInstanceRef.current.invalidateSize()
                 console.log('[EmergencyMap] ✅ Mapa invalidado y tamaño ajustado')
-              } catch (error) {
-                console.warn('[EmergencyMap] ⚠️ Error al invalidar tamaño del mapa:', error)
+              } else {
+                // Si no tiene dimensiones, intentar de nuevo
+                setTimeout(invalidateSize, 100)
               }
+            } catch (error) {
+              console.warn('[EmergencyMap] ⚠️ Error al invalidar tamaño del mapa:', error)
             }
-          }, 200) // Aumentar delay para asegurar que el mapa esté listo
+          }
+        }
+
+        // Intentar invalidar después de que el DOM esté listo
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            setTimeout(invalidateSize, 100)
+          })
         })
+
+        return true
       } catch (error) {
         console.error('[EmergencyMap] ❌ Error al inicializar mapa:', error)
+        return false
       }
     }
 
-    initializeMap()
+    // Intentar inicializar inmediatamente
+    let initialized = false
+    if (mapRef.current.parentElement) {
+      initialized = initializeMap()
+    }
+
+    // Si no se pudo inicializar, intentar de nuevo después de un delay
+    if (!initialized) {
+      const timeout = setTimeout(() => {
+        if (!mapInstanceRef.current && mapRef.current) {
+          initializeMap()
+        }
+      }, 100)
+
+      return () => {
+        clearTimeout(timeout)
+      }
+    }
 
     // Limpiar al desmontar
     return () => {
