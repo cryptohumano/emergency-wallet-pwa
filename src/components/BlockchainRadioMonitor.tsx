@@ -698,7 +698,12 @@ export function BlockchainRadioMonitor() {
                   <h3 className="font-semibold mb-2">Datos del Remark (Decodificado)</h3>
                   <div className="bg-muted p-3 rounded text-xs overflow-auto max-h-48">
                     <pre className="whitespace-pre-wrap">
-                      {JSON.stringify(selectedEmergency.remarkData, null, 2)}
+                      {JSON.stringify(selectedEmergency.remarkData, (key, value) => {
+                        if (typeof value === 'bigint') {
+                          return value.toString() + 'n'
+                        }
+                        return value
+                      }, 2)}
                     </pre>
                   </div>
                 </div>
@@ -710,7 +715,12 @@ export function BlockchainRadioMonitor() {
                   <h3 className="font-semibold mb-2">Información Adicional</h3>
                   <div className="bg-muted p-3 rounded text-xs overflow-auto max-h-48">
                     <pre className="whitespace-pre-wrap">
-                      {JSON.stringify(selectedEmergency.metadata, null, 2)}
+                      {JSON.stringify(selectedEmergency.metadata, (key, value) => {
+                        if (typeof value === 'bigint') {
+                          return value.toString() + 'n'
+                        }
+                        return value
+                      }, 2)}
                     </pre>
                   </div>
                 </div>
