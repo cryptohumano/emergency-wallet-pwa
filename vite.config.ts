@@ -60,24 +60,29 @@ const getBase = () => {
   if (repoName && !repoName.includes('.github.io')) {
     return `/${repoName}/`
   }
-  return '/'
+  
+  // Fallback: si no hay GITHUB_REPOSITORY pero estamos en build, usar el nombre del repo
+  // El repositorio es andino-wallet-pwa según el package.json
+  // Hardcodeamos el base path para GitHub Pages
+  // Cambiar esto si el nombre del repositorio cambia
+  return '/andino-wallet-pwa/'
 }
 
 // Calcular el base path dinámicamente (se recalcula cada vez que se accede)
 // Esto asegura que las variables de entorno estén disponibles durante el build
 const basePath = getBase()
 
-// Log para debugging (solo en build)
-if (process.env.NODE_ENV === 'production') {
-  console.log('[Vite Config] Base path:', basePath)
-  console.log('[Vite Config] GITHUB_REPOSITORY:', process.env.GITHUB_REPOSITORY)
-  console.log('[Vite Config] NODE_ENV:', process.env.NODE_ENV)
-  
-  // Verificar que el base path sea correcto
-  if (!basePath || basePath === '/') {
-    console.warn('[Vite Config] ⚠️ Base path es "/". Si estás desplegando en GitHub Pages, esto podría causar problemas.')
-    console.warn('[Vite Config] GITHUB_REPOSITORY debería estar configurado en el workflow de GitHub Actions.')
-  }
+// Log para debugging (siempre, para ver qué está pasando)
+console.log('[Vite Config] Base path calculado:', basePath)
+console.log('[Vite Config] GITHUB_REPOSITORY:', process.env.GITHUB_REPOSITORY)
+console.log('[Vite Config] NODE_ENV:', process.env.NODE_ENV)
+console.log('[Vite Config] VITE_BASE_URL:', process.env.VITE_BASE_URL)
+
+// Verificar que el base path sea correcto
+if (process.env.NODE_ENV === 'production' && (!basePath || basePath === '/')) {
+  console.warn('[Vite Config] ⚠️ Base path es "/". Si estás desplegando en GitHub Pages, esto podría causar problemas.')
+  console.warn('[Vite Config] GITHUB_REPOSITORY debería estar configurado en el workflow de GitHub Actions.')
+  console.warn('[Vite Config] Usando fallback: /andino-wallet-pwa/')
 }
 
 // https://vite.dev/config/
