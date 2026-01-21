@@ -79,11 +79,12 @@ export function BottomNav() {
               {navigation.map((item) => {
                 const isActive = location.pathname === item.href
                 return (
-                  <button
+                  <Button
                     key={item.name}
                     onClick={() => handleNavigation(item.href)}
+                    variant={isActive ? 'default' : 'ghost'}
                     className={cn(
-                      'w-full flex items-center gap-4 p-4 rounded-lg transition-colors text-left',
+                      'w-full flex items-center gap-4 p-4 h-auto justify-start',
                       isActive
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted hover:bg-muted/80 text-foreground'
@@ -95,7 +96,7 @@ export function BottomNav() {
                         isActive ? 'text-primary-foreground' : 'text-muted-foreground'
                       )}
                     />
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 text-left">
                       <div
                         className={cn(
                           'font-medium',
@@ -116,7 +117,7 @@ export function BottomNav() {
                     {isActive && (
                       <div className="h-2 w-2 rounded-full bg-primary-foreground" />
                     )}
-                  </button>
+                  </Button>
                 )
               })}
             </div>
