@@ -230,15 +230,15 @@ export default defineConfig({
         enabled: true,
         type: 'module',
       },
-      // Configuración para hacer la PWA instalable
-      injectRegister: 'auto',
+      // injectRegister ya está definido arriba (línea 115), no duplicar
       injectManifest: false
     })
   ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      // Asegurar que buffer se resuelva correctamente
+      // Asegurar que buffer se resuelva correctamente y esté disponible globalmente
+      // Esto permite que el código del cliente acceda a buffer.Buffer
       buffer: 'buffer',
     },
   },
@@ -254,6 +254,8 @@ export default defineConfig({
       },
     },
     include: ['buffer'],
+    // Asegurar que buffer no se externalice
+    exclude: [],
   },
   // Configuración para no externalizar buffer
   build: {
@@ -261,9 +263,17 @@ export default defineConfig({
       transformMixedEsModules: true,
     },
     rollupOptions: {
-      output: {
-        // No externalizar buffer
-        external: [],
+      // NO externalizar buffer - debe estar incluido en el bundle del cliente
+      // Si externalizamos buffer, el código del cliente no podrá acceder a buffer.Buffer
+      external: (id) => {
+        // Solo externalizar módulos de Node.js que realmente no se pueden usar en el navegador
+        // y que no son necesarios para el código del cliente
+        const nodeOnlyModules = ['fs', 'path', 'os', 'crypto', 'http', 'https', 'net', 'tls', 'stream', 'util', 'events', 'url', 'querystring', 'zlib', 'readline', 'child_process']
+        if (nodeOnlyModules.includes(id) || id.startsWith('node:')) {
+          return true
+        }
+        // NO externalizar buffer - debe estar en el bundle
+        return false
       },
     },
   },

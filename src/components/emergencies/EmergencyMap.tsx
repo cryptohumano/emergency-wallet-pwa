@@ -171,10 +171,12 @@ export function EmergencyMap({ emergency, className }: EmergencyMapProps) {
 
     console.log('[EmergencyMap] 🗺️ Inicializando mapa en:', center)
 
-    // Asegurar que el contenedor tenga altura
+    // Asegurar que el contenedor tenga altura y ancho explícitos
     if (mapRef.current) {
       mapRef.current.style.height = '256px'
       mapRef.current.style.width = '100%'
+      mapRef.current.style.minHeight = '256px'
+      mapRef.current.style.display = 'block'
     }
 
     // Función para inicializar el mapa
@@ -183,14 +185,32 @@ export function EmergencyMap({ emergency, className }: EmergencyMapProps) {
         return false
       }
 
+      // Verificar que el contenedor tenga dimensiones antes de inicializar
+      const rect = mapRef.current.getBoundingClientRect()
+      if (rect.width === 0 || rect.height === 0) {
+        console.warn('[EmergencyMap] ⚠️ Contenedor sin dimensiones, esperando...')
+        return false
+      }
+
       try {
-        // Crear mapa
-        const map = L.map(mapRef.current, {
+        // Crear mapa con z-index bajo para no superponer header
+        // El header tiene z-40, el mapa debe estar al mismo nivel que el contenido
+        const map = L.map(mapRef.current!, {
           center,
           zoom: 13,
           zoomControl: true,
           preferCanvas: false,
+          // Asegurar que el mapa tenga z-index bajo
+          zoomAnimation: true,
+          fadeAnimation: true,
+          markerZoomAnimation: true,
         })
+        
+        // Establecer z-index explícitamente en el contenedor del mapa
+        if (mapRef.current) {
+          mapRef.current.style.position = 'relative'
+          mapRef.current.style.zIndex = '10'
+        }
 
         // Agregar capa de OpenStreetMap
         const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -240,27 +260,27 @@ export function EmergencyMap({ emergency, className }: EmergencyMapProps) {
       }
     }
 
-    // Intentar inicializar inmediatamente
-    let initialized = false
-    if (mapRef.current.parentElement) {
-      initialized = initializeMap()
-    }
-
-    // Si no se pudo inicializar, intentar de nuevo después de un delay
-    if (!initialized) {
-      const timeout = setTimeout(() => {
-        if (!mapInstanceRef.current && mapRef.current) {
+    // Esperar a que el DOM esté completamente renderizado
+    const initTimeout = setTimeout(() => {
+      // Verificar que el contenedor esté en el DOM y tenga dimensiones
+      if (mapRef.current && mapRef.current.parentElement) {
+        const rect = mapRef.current.getBoundingClientRect()
+        if (rect.width > 0 && rect.height > 0) {
           initializeMap()
+        } else {
+          // Si aún no tiene dimensiones, intentar con un delay adicional
+          setTimeout(() => {
+            if (!mapInstanceRef.current && mapRef.current) {
+              initializeMap()
+            }
+          }, 200)
         }
-      }, 100)
-
-      return () => {
-        clearTimeout(timeout)
       }
-    }
+    }, 50)
 
     // Limpiar al desmontar
     return () => {
+      clearTimeout(initTimeout)
       console.log('[EmergencyMap] 🧹 Limpiando mapa')
       if (mapInstanceRef.current) {
         try {
@@ -374,8 +394,12 @@ export function EmergencyMap({ emergency, className }: EmergencyMapProps) {
           <div className="space-y-2">
             <div
               ref={mapRef}
-              className="w-full h-64 rounded-md border"
-              style={{ minHeight: '256px' }}
+              className="w-full h-64 rounded-md border relative"
+              style={{ 
+                minHeight: '256px',
+                zIndex: 10, // Mismo nivel que el contenido, no por encima del header (z-40)
+                isolation: 'isolate', // Crear nuevo contexto de apilamiento
+              }}
             />
             <div className="text-xs text-muted-foreground space-y-1">
               <div className="flex items-center gap-2">

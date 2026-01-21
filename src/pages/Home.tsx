@@ -16,7 +16,11 @@ import { formatBalanceForDisplay, getChainSymbol } from '@/utils/balance'
 import { Badge } from '@/components/ui/badge'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale/es'
-import { BlockchainRadioMonitor } from '@/components/BlockchainRadioMonitor'
+import { lazy, Suspense } from 'react'
+import { Loader2 } from 'lucide-react'
+
+// Lazy load del monitor para mejorar LCP - es un componente pesado
+const BlockchainRadioMonitor = lazy(() => import('@/components/BlockchainRadioMonitor').then(module => ({ default: module.BlockchainRadioMonitor })))
 
 export default function Home() {
   const { activeAccount } = useActiveAccount()
@@ -40,8 +44,18 @@ export default function Home() {
 
   return (
     <div className="space-y-6">
-      {/* Monitor de Radio de Blockchain */}
-      <BlockchainRadioMonitor />
+      {/* Monitor de Radio de Blockchain - Lazy loaded para mejorar LCP */}
+      <Suspense fallback={
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center h-32">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+      }>
+        <BlockchainRadioMonitor />
+      </Suspense>
 
       {/* Estado de escucha */}
       <Card>

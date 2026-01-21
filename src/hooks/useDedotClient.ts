@@ -177,17 +177,58 @@ async function tryConnectWithFallback(
       // Estos errores no afectan la funcionalidad principal, así que los ignoramos
       const client = await DedotClient.new(provider)
       
-      // Agregar un manejador de errores no capturados para eventos internos
+      // Agregar manejadores de errores no capturados para eventos internos
       // Esto previene que errores internos de Dedot rompan la aplicación
       if (typeof window !== 'undefined') {
+        // Función helper para verificar si es un error de Dedot que debemos ignorar
+        const isDedotInternalError = (message: string | Event, error?: Error): boolean => {
+          const messageStr = typeof message === 'string' ? message : String(message)
+          const errorMessage = error?.message || ''
+          const errorStack = error?.stack || ''
+          
+          // Errores relacionados con 'hash' undefined en Dedot
+          const isHashError = (
+            messageStr.includes('hash') && 
+            (messageStr.includes('undefined') || messageStr.includes('Cannot read properties'))
+          ) || (
+            errorMessage.includes('hash') && 
+            (errorMessage.includes('undefined') || errorMessage.includes('Cannot read properties'))
+          )
+          
+          // Errores de conexión WebSocket que son normales durante reconexiones
+          const isConnectionError = (
+            messageStr.includes('Could not establish connection') ||
+            messageStr.includes('Receiving end does not exist') ||
+            messageStr.includes('Connection closed') ||
+            messageStr.includes('write after end')
+          ) || (
+            errorMessage.includes('Could not establish connection') ||
+            errorMessage.includes('Receiving end does not exist') ||
+            errorMessage.includes('Connection closed') ||
+            errorMessage.includes('write after end')
+          )
+          
+          // Errores de WsProvider internos
+          const isWsProviderError = (
+            messageStr.includes('WsProvider') ||
+            messageStr.includes('_handleNotification') ||
+            messageStr.includes('_onReceiveResponse') ||
+            errorStack.includes('WsProvider') ||
+            errorStack.includes('_handleNotification') ||
+            errorStack.includes('_onReceiveResponse')
+          )
+          
+          return isHashError || isConnectionError || isWsProviderError
+        }
+        
+        // Manejador de errores síncronos
         const originalErrorHandler = window.onerror
         window.onerror = (message, source, lineno, colno, error) => {
-          // Ignorar errores específicos de Dedot relacionados con 'hash' y 'onFollowEvent'
-          if (
-            (typeof message === 'string' && message.includes('hash') && message.includes('onFollowEvent')) ||
-            (error?.message?.includes('hash') && error?.stack?.includes('onFollowEvent'))
-          ) {
-            console.warn('[DedotClient] ⚠️ Error interno de Dedot ignorado:', message)
+          if (isDedotInternalError(message, error)) {
+            // Solo loguear en modo debug para no saturar la consola
+            if (process.env.NODE_ENV === 'development') {
+              console.debug('[DedotClient] ⚠️ Error interno de Dedot ignorado:', message)
+            }
             return true // Prevenir que el error se propague
           }
           // Llamar al manejador original para otros errores
@@ -195,6 +236,28 @@ async function tryConnectWithFallback(
             return originalErrorHandler(message, source, lineno, colno, error)
           }
           return false
+        }
+        
+        // Manejador de promesas rechazadas (errores asíncronos)
+        const originalRejectionHandler = window.onunhandledrejection
+        window.onunhandledrejection = (event: PromiseRejectionEvent) => {
+          const reason = event.reason
+          const error = reason instanceof Error ? reason : new Error(String(reason))
+          const message = error.message || String(reason)
+          
+          if (isDedotInternalError(message, error)) {
+            // Solo loguear en modo debug para no saturar la consola
+            if (process.env.NODE_ENV === 'development') {
+              console.debug('[DedotClient] ⚠️ Promesa rechazada de Dedot ignorada:', message)
+            }
+            event.preventDefault() // Prevenir que el error se propague
+            return
+          }
+          
+          // Llamar al manejador original para otros errores
+          if (originalRejectionHandler) {
+            originalRejectionHandler(event)
+          }
         }
       }
       

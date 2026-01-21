@@ -10,6 +10,22 @@
     <meta name="theme-color" content="#ffffff" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>Emergency Wallet</title>
+    <!-- Preload de recursos críticos para mejorar LCP -->
+    <link rel="preload" href="/src/main.tsx" as="script" />
+    <link rel="preconnect" href="https://tile.openstreetmap.org" />
+    <link rel="dns-prefetch" href="https://tile.openstreetmap.org" />
+    <!-- Optimización: renderizar contenido crítico primero -->
+    <style>
+      /* Optimizar renderizado inicial - NO ocultar el body para permitir medición correcta del LCP */
+      #root {
+        min-height: 100vh;
+      }
+      /* Mostrar contenido inmediatamente para mejor LCP */
+      body {
+        margin: 0;
+        padding: 0;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

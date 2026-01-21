@@ -257,12 +257,22 @@ export function RouteMap({ log, className }: RouteMapProps) {
     // Si el mapa ya existe, no recrearlo
     if (mapRef.current) return
     
-    // Crear el mapa
+    // Crear el mapa con z-index bajo para no superponer header
+    // El header tiene z-40, el mapa debe estar al mismo nivel que el contenido
     const map = L.map(mapContainerRef.current, {
       center: [centerLat, centerLon],
       zoom: 13,
       scrollWheelZoom: true,
+      zoomAnimation: true,
+      fadeAnimation: true,
+      markerZoomAnimation: true,
     })
+    
+    // Establecer z-index explícitamente en el contenedor del mapa
+    if (mapContainerRef.current) {
+      mapContainerRef.current.style.position = 'relative'
+      mapContainerRef.current.style.zIndex = '10'
+    }
     
     // Agregar capa de tiles de OpenStreetMap
     const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -394,8 +404,12 @@ export function RouteMap({ log, className }: RouteMapProps) {
           <div className="space-y-2">
             <div 
               ref={mapContainerRef}
-              className="h-96 w-full rounded-lg border overflow-hidden"
-              style={{ minHeight: '384px' }}
+              className="h-96 w-full rounded-lg border overflow-hidden relative"
+              style={{ 
+                minHeight: '384px',
+                zIndex: 10, // Mismo nivel que el contenido, no por encima del header (z-40)
+                isolation: 'isolate', // Crear nuevo contexto de apilamiento
+              }}
             />
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>

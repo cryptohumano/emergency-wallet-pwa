@@ -224,3 +224,38 @@ body {
   }
 }
 
+/* Estilos para mapas de Leaflet - Asegurar que no se superpongan al header */
+/* El header tiene z-40, los mapas deben estar al mismo nivel que el contenido (z-10) */
+@layer components {
+  /* Contenedores de mapas - z-index bajo para no superponer header */
+  .leaflet-container {
+    position: relative !important;
+    z-index: 10 !important;
+  }
+  
+  /* Paneles de control de Leaflet - también z-index bajo */
+  .leaflet-control-container {
+    z-index: 10 !important;
+  }
+  
+  /* Popups de Leaflet - z-index medio, pero no por encima del header */
+  .leaflet-popup {
+    z-index: 20 !important;
+  }
+  
+  /* Paneles de zoom - z-index bajo */
+  .leaflet-control-zoom {
+    z-index: 10 !important;
+  }
+  
+  /* Asegurar que los mapas estén dentro del contexto de apilamiento del contenido */
+  .leaflet-map-pane,
+  .leaflet-tile-pane,
+  .leaflet-overlay-pane,
+  .leaflet-shadow-pane,
+  .leaflet-marker-pane,
+  .leaflet-tooltip-pane,
+  .leaflet-popup-pane {
+    z-index: auto !important;
+  }
+}

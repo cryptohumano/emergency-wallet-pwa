@@ -163,8 +163,8 @@ export function useRemarkListener() {
               return prev
             }
             const newEvents = [event, ...prev]
-            // Mantener solo los últimos 100 eventos
-            return newEvents.slice(0, 100)
+            // Mantener solo los últimos 50 eventos (reducido de 100 para ahorrar memoria)
+            return newEvents.slice(0, 50)
           })
         },
         onBlockProcessed: (blockNumber: number, eventsCount: number) => {
@@ -341,6 +341,17 @@ export function useRemarkListener() {
       return
     }
 
+    // Limpieza periódica de eventos para evitar acumulación de memoria
+    const cleanupEventsInterval = setInterval(() => {
+      setEvents((prev) => {
+        // Mantener solo los últimos 50 eventos
+        if (prev.length > 50) {
+          return prev.slice(0, 50)
+        }
+        return prev
+      })
+    }, 60000) // Limpiar cada minuto
+
     // Verificar cada 30 segundos que el listener esté activo
     keepAliveIntervalRef.current = setInterval(() => {
       if (isVisibleRef.current && client && activeAccount) {
@@ -361,6 +372,9 @@ export function useRemarkListener() {
       if (keepAliveIntervalRef.current) {
         clearInterval(keepAliveIntervalRef.current)
         keepAliveIntervalRef.current = null
+      }
+      if (cleanupEventsInterval) {
+        clearInterval(cleanupEventsInterval)
       }
     }
   }, [client, activeAccount])

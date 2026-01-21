@@ -42,8 +42,9 @@ export class RemarkListener {
   private remarksFound: number = 0
   private lastEventTime: number = 0
   private connectionCheckInterval: NodeJS.Timeout | null = null
-  private allEvents: BlockchainEvent[] = [] // Historial de eventos (últimos 100)
-  private maxEventsHistory = 100
+  private allEvents: BlockchainEvent[] = [] // Historial de eventos (últimos 50)
+  private maxEventsHistory = 50 // Reducido de 100 a 50 para ahorrar memoria
+  private memoryCleanupInterval: NodeJS.Timeout | null = null
 
   /**
    * Inicia la escucha de eventos System.Remarked
@@ -143,8 +144,53 @@ export class RemarkListener {
           
           await this.handleEvents(eventRecords)
         } catch (error) {
-          // Capturar TODOS los errores de dedot sin romper la suscripción
-          // Esto incluye errores como "Cannot read properties of undefined (reading 'hash')"
+          // Función helper para verificar si es un error de Dedot que debemos ignorar silenciosamente
+          const isDedotInternalError = (err: unknown): boolean => {
+            if (!(err instanceof Error)) return false
+            
+            const message = err.message || ''
+            const stack = err.stack || ''
+            
+            // Errores relacionados con 'hash' undefined en Dedot
+            const isHashError = (
+              message.includes('hash') && 
+              (message.includes('undefined') || message.includes('Cannot read properties'))
+            ) || (
+              stack.includes('hash') && 
+              (stack.includes('undefined') || stack.includes('Cannot read properties'))
+            )
+            
+            // Errores de conexión WebSocket que son normales durante reconexiones
+            const isConnectionError = (
+              message.includes('Could not establish connection') ||
+              message.includes('Receiving end does not exist') ||
+              message.includes('Connection closed') ||
+              message.includes('write after end')
+            )
+            
+            // Errores de WsProvider internos
+            const isWsProviderError = (
+              message.includes('WsProvider') ||
+              message.includes('_handleNotification') ||
+              message.includes('_onReceiveResponse') ||
+              stack.includes('WsProvider') ||
+              stack.includes('_handleNotification') ||
+              stack.includes('_onReceiveResponse')
+            )
+            
+            return isHashError || isConnectionError || isWsProviderError
+          }
+          
+          // Si es un error interno de Dedot, ignorarlo silenciosamente
+          if (isDedotInternalError(error)) {
+            // Solo loguear en modo debug para no saturar la consola
+            if (process.env.NODE_ENV === 'development') {
+              console.debug('[RemarkListener] ⚠️ Error interno de Dedot ignorado (continuando escucha):', error)
+            }
+            return // Salir silenciosamente sin notificar
+          }
+          
+          // Para otros errores, loguear y notificar
           console.warn('[RemarkListener] ⚠️ Error en handleEvents (capturado, continuando escucha):', error)
           
           // Notificar el error pero no lanzarlo para mantener la suscripción activa
@@ -227,6 +273,9 @@ export class RemarkListener {
       // Iniciar verificación periódica de conexión
       this.startConnectionCheck()
       
+      // Iniciar limpieza periódica de memoria
+      this.startMemoryCleanup()
+      
       console.log('[RemarkListener] ✅ Escucha iniciada correctamente para cuenta:', accountAddress)
       console.log('[RemarkListener] 🎧 Escuchando eventos System.Remarked constantemente...')
       console.log('[RemarkListener] ⏱️ Tiempo de refresh: En tiempo real (cada nuevo bloque)')
@@ -264,6 +313,40 @@ export class RemarkListener {
         console.debug('[RemarkListener] ✅ Conexión activa (último evento hace', Math.floor(timeSinceLastEvent / 1000), 'segundos)')
       }
     }, 60000) // Verificar cada 60 segundos
+  }
+
+  /**
+   * Inicia limpieza periódica de memoria
+   * Limpia eventos antiguos y reduce el uso de memoria
+   */
+  private startMemoryCleanup(): void {
+    // Limpiar intervalo anterior si existe
+    if (this.memoryCleanupInterval) {
+      clearInterval(this.memoryCleanupInterval)
+    }
+
+    // Limpiar memoria cada 5 minutos
+    this.memoryCleanupInterval = setInterval(() => {
+      if (!this.isListening) {
+        return
+      }
+
+      try {
+        // Limpiar eventos antiguos (mantener solo los últimos N)
+        if (this.allEvents.length > this.maxEventsHistory) {
+          const before = this.allEvents.length
+          this.allEvents = this.allEvents.slice(0, this.maxEventsHistory)
+          console.log(`[RemarkListener] 🧹 Limpieza de memoria: ${before} -> ${this.allEvents.length} eventos`)
+        }
+
+        // Forzar garbage collection si está disponible (solo en desarrollo)
+        if (process.env.NODE_ENV === 'development' && (globalThis as any).gc) {
+          (globalThis as any).gc()
+        }
+      } catch (error) {
+        console.warn('[RemarkListener] ⚠️ Error en limpieza de memoria:', error)
+      }
+    }, 300000) // Cada 5 minutos
   }
 
   /**
@@ -355,7 +438,9 @@ export class RemarkListener {
         }
         
         // Agregar al historial (mantener solo los últimos N)
+        // Usar unshift para agregar al inicio, pero limitar inmediatamente
         this.allEvents.unshift(blockchainEvent)
+        // Limitar más agresivamente para ahorrar memoria
         if (this.allEvents.length > this.maxEventsHistory) {
           this.allEvents = this.allEvents.slice(0, this.maxEventsHistory)
         }
@@ -577,8 +662,44 @@ export class RemarkListener {
       this.callbacks.onError?.(error instanceof Error ? error : new Error(String(error)))
       }
     } catch (error) {
-      // Capturar errores de dedot (como el error de hash undefined)
-      console.error('[RemarkListener] ❌ Error crítico en handleEvents (probablemente de dedot):', error)
+      // Función helper para verificar si es un error de Dedot que debemos ignorar silenciosamente
+      const isDedotInternalError = (err: unknown): boolean => {
+        if (!(err instanceof Error)) return false
+        
+        const message = err.message || ''
+        const stack = err.stack || ''
+        
+        // Errores relacionados con 'hash' undefined en Dedot
+        const isHashError = (
+          message.includes('hash') && 
+          (message.includes('undefined') || message.includes('Cannot read properties'))
+        ) || (
+          stack.includes('hash') && 
+          (stack.includes('undefined') || stack.includes('Cannot read properties'))
+        )
+        
+        // Errores de conexión WebSocket que son normales durante reconexiones
+        const isConnectionError = (
+          message.includes('Could not establish connection') ||
+          message.includes('Receiving end does not exist') ||
+          message.includes('Connection closed') ||
+          message.includes('write after end')
+        )
+        
+        return isHashError || isConnectionError
+      }
+      
+      // Si es un error interno de Dedot, ignorarlo silenciosamente
+      if (isDedotInternalError(error)) {
+        // Solo loguear en modo debug para no saturar la consola
+        if (process.env.NODE_ENV === 'development') {
+          console.debug('[RemarkListener] ⚠️ Error interno de Dedot ignorado:', error)
+        }
+        return // Salir silenciosamente
+      }
+      
+      // Para otros errores, loguear normalmente
+      console.error('[RemarkListener] ❌ Error crítico en handleEvents:', error)
       // No llamar onError aquí para evitar loops infinitos, solo loguear
       // El listener debe continuar funcionando
     }
@@ -1127,6 +1248,12 @@ export class RemarkListener {
       this.connectionCheckInterval = null
     }
 
+    // Limpiar intervalo de limpieza de memoria
+    if (this.memoryCleanupInterval) {
+      clearInterval(this.memoryCleanupInterval)
+      this.memoryCleanupInterval = null
+    }
+
     // Cancelar suscripción
     if (this.unsubscribe) {
       try {
@@ -1143,6 +1270,9 @@ export class RemarkListener {
     this.lastEventTime = 0
     this.blocksProcessed = 0
     this.remarksFound = 0
+    
+    // Limpiar eventos para liberar memoria
+    this.allEvents = []
   }
 
   /**

@@ -15,13 +15,16 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const { isReady, isUnlocked, hasStoredAccounts } = useKeyringContext()
   const location = useLocation()
 
-  // Esperar a que el keyring esté listo
+  // Esperar a que el keyring esté listo - pero mostrar contenido inmediatamente para mejor LCP
   if (!isReady) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Inicializando wallet...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <div>
+            <p className="text-sm font-medium text-foreground">Inicializando wallet...</p>
+            <p className="text-xs text-muted-foreground mt-1">Por favor espera</p>
+          </div>
         </div>
       </div>
     )
