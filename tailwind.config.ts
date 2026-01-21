@@ -44,6 +44,14 @@ export default {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
         },
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))',
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--warning))',
+          foreground: 'hsl(var(--warning-foreground))',
+        },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
@@ -53,6 +61,28 @@ export default {
           '3': 'hsl(var(--chart-3))',
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
+        },
+        // Colores semánticos de emergencias
+        emergency: {
+          critical: 'hsl(var(--emergency-critical))',
+          'critical-bg': 'hsl(var(--emergency-critical-bg))',
+          high: 'hsl(var(--emergency-high))',
+          'high-bg': 'hsl(var(--emergency-high-bg))',
+          medium: 'hsl(var(--emergency-medium))',
+          'medium-bg': 'hsl(var(--emergency-medium-bg))',
+          low: 'hsl(var(--emergency-low))',
+          'low-bg': 'hsl(var(--emergency-low-bg))',
+        },
+        // Estados del sistema
+        status: {
+          connected: 'hsl(var(--status-connected))',
+          'connected-bg': 'hsl(var(--status-connected-bg))',
+          disconnected: 'hsl(var(--status-disconnected))',
+          'disconnected-bg': 'hsl(var(--status-disconnected-bg))',
+          connecting: 'hsl(var(--status-connecting))',
+          'connecting-bg': 'hsl(var(--status-connecting-bg))',
+          syncing: 'hsl(var(--status-syncing))',
+          'syncing-bg': 'hsl(var(--status-syncing-bg))',
         },
       },
     },

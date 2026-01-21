@@ -43,7 +43,7 @@ export function Header() {
 
   if (!context) {
     return (
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40 safe-area-inset-top">
+      <header className="glass-header border-b sticky top-0 z-40 safe-area-inset-top">
         <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-4 max-w-full overflow-hidden">
           <div className="flex items-center justify-between gap-2 min-w-0">
             <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
@@ -67,7 +67,7 @@ export function Header() {
   const { selectedChain, setSelectedChain, isConnecting } = context
 
   return (
-    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40 safe-area-inset-top">
+    <header className="glass-header border-b sticky top-0 z-40 safe-area-inset-top">
       <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-4 max-w-full overflow-hidden">
         <div className="flex items-center justify-between gap-2 min-w-0">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">

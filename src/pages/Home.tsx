@@ -62,7 +62,7 @@ export default function Home() {
       </Suspense>
 
       {/* Estado de escucha */}
-      <Card>
+      <Card className="card-elevated fade-in">
         <CardHeader>
           <CardTitle>Estado del Sistema</CardTitle>
           <CardDescription>Estado de conexión y escucha de emergencias</CardDescription>
@@ -71,13 +71,17 @@ export default function Home() {
           <div className="flex items-center gap-2">
             {isListening ? (
               <>
-                <div className="h-3 w-3 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-sm">Escuchando emergencias...</span>
+                <div className="h-3 w-3 rounded-full bg-green-500 status-indicator shadow-lg shadow-green-500/50" />
+                <span className="text-sm font-medium text-green-700 dark:text-green-400">
+                  Escuchando emergencias...
+                </span>
               </>
             ) : (
               <>
-                <div className="h-3 w-3 rounded-full bg-red-500" />
-                <span className="text-sm">No conectado</span>
+                <div className="h-3 w-3 rounded-full bg-red-500 shadow-lg shadow-red-500/50" />
+                <span className="text-sm font-medium text-red-700 dark:text-red-400">
+                  No conectado
+                </span>
               </>
             )}
           </div>
@@ -91,7 +95,7 @@ export default function Home() {
 
       {/* Balance de cuenta activa */}
       {activeAccount && selectedChain && (
-        <Card>
+        <Card className="card-elevated fade-in">
           <CardHeader>
             <CardTitle>Balance</CardTitle>
           </CardHeader>
@@ -100,7 +104,7 @@ export default function Home() {
               {balance ? (
                 formatBalanceForDisplay(balance.total, selectedChain.name)
               ) : (
-                <span className="text-muted-foreground">Cargando...</span>
+                <span className="text-muted-foreground loading-shimmer">Cargando...</span>
               )}
             </div>
           </CardContent>
@@ -108,7 +112,7 @@ export default function Home() {
       )}
 
       {/* Emergencias Activas */}
-      <Card>
+      <Card className="card-elevated fade-in">
         <CardHeader>
           <CardTitle>Emergencias Activas</CardTitle>
           <CardDescription>
@@ -124,9 +128,9 @@ export default function Home() {
                 <Link
                   key={emergency.emergencyId}
                   to={`/emergencies/${emergency.emergencyId}`}
-                  className="block"
+                  className="block fade-in"
                 >
-                  <Card className="hover:bg-accent active:scale-[0.98] transition-all cursor-pointer min-h-[80px]">
+                  <Card className="emergency-card card-elevated active:scale-[0.98] cursor-pointer min-h-[80px]">
                     <CardContent className="pt-4 pb-4">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
@@ -141,7 +145,10 @@ export default function Home() {
                                       ? 'default'
                                       : 'secondary'
                               }
-                              className="text-xs"
+                              className={`text-xs severity-badge ${
+                                emergency.severity === 'critical' ? 'severity-critical' :
+                                emergency.severity === 'high' ? 'severity-high' : ''
+                              }`}
                             >
                               {emergency.severity}
                             </Badge>

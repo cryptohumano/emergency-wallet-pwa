@@ -39,7 +39,7 @@ export default function Emergencies() {
   return (
     <div className="space-y-4">
       {/* Filtros */}
-      <Tabs value={filter} onValueChange={(v) => setFilter(v as any)}>
+      <Tabs value={filter} onValueChange={(v) => setFilter(v as any)} className="fade-in">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="all">Todas ({emergencies.length})</TabsTrigger>
           <TabsTrigger value="active">
@@ -70,7 +70,7 @@ export default function Emergencies() {
       {/* Lista */}
       <div className="space-y-2">
         {filtered.length === 0 ? (
-          <Card>
+          <Card className="card-elevated fade-in">
             <CardContent className="pt-6">
               <p className="text-center text-muted-foreground">
                 No hay emergencias en esta categoría
@@ -78,8 +78,10 @@ export default function Emergencies() {
             </CardContent>
           </Card>
         ) : (
-          filtered.map((emergency) => (
-            <EmergencyCard key={emergency.emergencyId} emergency={emergency} />
+          filtered.map((emergency, index) => (
+            <div key={emergency.emergencyId} className="slide-up" style={{ animationDelay: `${index * 0.05}s` }}>
+              <EmergencyCard emergency={emergency} />
+            </div>
           ))
         )}
       </div>
@@ -89,11 +91,11 @@ export default function Emergencies() {
 
 function EmergencyCard({ emergency }: { emergency: Emergency }) {
   return (
-    <Link to={`/emergencies/${emergency.emergencyId}`} className="block">
-      <Card className="hover:bg-accent transition-colors">
-        <CardContent className="pt-4">
+    <Link to={`/emergencies/${emergency.emergencyId}`} className="block fade-in">
+      <Card className="emergency-card card-elevated active:scale-[0.98] cursor-pointer min-h-[80px]">
+        <CardContent className="pt-4 pb-4">
           <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 space-y-2">
+            <div className="flex-1 space-y-2 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge
                   variant={
@@ -105,6 +107,10 @@ function EmergencyCard({ emergency }: { emergency: Emergency }) {
                           ? 'default'
                           : 'secondary'
                   }
+                  className={`text-xs severity-badge ${
+                    emergency.severity === 'critical' ? 'severity-critical' :
+                    emergency.severity === 'high' ? 'severity-high' : ''
+                  }`}
                 >
                   {emergency.severity}
                 </Badge>

@@ -82,13 +82,13 @@ export default function EmergencyDetail() {
   return (
     <div className="space-y-4">
       {/* Botón volver */}
-      <Button variant="outline" onClick={() => navigate(-1)}>
+      <Button variant="outline" onClick={() => navigate(-1)} className="fade-in">
         <ArrowLeft className="mr-2 h-4 w-4" />
         Volver
       </Button>
 
       {/* Información principal */}
-      <Card>
+      <Card className="card-elevated fade-in">
         <CardHeader>
           <div className="flex items-start justify-between">
             <div>
@@ -109,6 +109,10 @@ export default function EmergencyDetail() {
                         ? 'default'
                         : 'secondary'
                 }
+                className={`severity-badge ${
+                  emergency.severity === 'critical' ? 'severity-critical' :
+                  emergency.severity === 'high' ? 'severity-high' : ''
+                }`}
               >
                 {emergency.severity}
               </Badge>

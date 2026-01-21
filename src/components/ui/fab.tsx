@@ -49,6 +49,7 @@ export function FAB({
           'transition-all duration-200',
           'flex items-center justify-center',
           'active:scale-95', // Feedback táctil en móvil
+          variant === 'destructive' && 'critical-glow', // Glow effect para emergencias
           className
         )}
         aria-label={ariaLabel || label}
