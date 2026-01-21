@@ -67,7 +67,7 @@ if (!self.define) {
     });
   };
 }
-define(['./workbox-5b681a98'], (function (workbox) { 'use strict';
+define(['./workbox-bfe0e23b'], (function (workbox) { 'use strict';
 
   self.skipWaiting();
   workbox.clientsClaim();
@@ -82,18 +82,28 @@ define(['./workbox-5b681a98'], (function (workbox) { 'use strict';
     "revision": "3ca0b8505b4bec776b69afdba2768812"
   }, {
     "url": "/index.html",
-    "revision": "0.lm8qdt52ga4"
+    "revision": "0.u3vo5esaou"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("/index.html"), {
     allowlist: [/^\/$/],
     denylist: [/^\/_/, /\/[^/?]+\.[^/]+$/]
   }));
-  workbox.registerRoute(/^https:\/\/.*staticmap\.openstreetmap\.(de|org|fr)\/.*/, new workbox.NetworkOnly(), 'GET');
+  workbox.registerRoute(/^https:\/\/.*staticmap\.openstreetmap\.(de|org|fr)\/.*/, new workbox.NetworkOnly({
+    plugins: [new workbox.CacheableResponsePlugin({
+      statuses: [200]
+    })]
+  }), 'GET');
+  workbox.registerRoute(/^https:\/\/.*\.tile\.openstreetmap\.org\/.*/, new workbox.NetworkOnly({
+    plugins: [new workbox.CacheableResponsePlugin({
+      statuses: [200]
+    })]
+  }), 'GET');
   workbox.registerRoute(({
     url
   }) => {
-    return url.protocol === "https:" && !url.hostname.includes("staticmap.openstreetmap");
+    const isMapService = url.hostname.includes("staticmap.openstreetmap") || url.hostname.includes("tile.openstreetmap.org") || url.hostname.includes("openstreetmap.org");
+    return url.protocol === "https:" && !isMapService;
   }, new workbox.NetworkFirst({
     "cacheName": "external-cache",
     "matchOptions": {
