@@ -6,7 +6,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { AlertTriangle, Activity } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useActiveAccount } from '@/contexts/ActiveAccountContext'
 import { useEmergency } from '@/hooks/useEmergency'
 import { useRemarkListenerContext } from '@/contexts/RemarkListenerContext'
@@ -18,11 +18,15 @@ import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale/es'
 import { lazy, Suspense } from 'react'
 import { Loader2 } from 'lucide-react'
+import { FAB } from '@/components/ui/fab'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 // Lazy load del monitor para mejorar LCP - es un componente pesado
 const BlockchainRadioMonitor = lazy(() => import('@/components/BlockchainRadioMonitor').then(module => ({ default: module.BlockchainRadioMonitor })))
 
 export default function Home() {
+  const navigate = useNavigate()
+  const isMobile = useIsMobile()
   const { activeAccount } = useActiveAccount()
   const { emergencies } = useEmergency()
   const { isListening } = useRemarkListenerContext()
@@ -122,11 +126,11 @@ export default function Home() {
                   to={`/emergencies/${emergency.emergencyId}`}
                   className="block"
                 >
-                  <Card className="hover:bg-accent transition-colors">
-                    <CardContent className="pt-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
+                  <Card className="hover:bg-accent active:scale-[0.98] transition-all cursor-pointer min-h-[80px]">
+                    <CardContent className="pt-4 pb-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
                             <Badge
                               variant={
                                 emergency.severity === 'critical'
@@ -137,13 +141,18 @@ export default function Home() {
                                       ? 'default'
                                       : 'secondary'
                               }
+                              className="text-xs"
                             >
                               {emergency.severity}
                             </Badge>
-                            <Badge variant="outline">{emergency.type}</Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {emergency.type}
+                            </Badge>
                           </div>
-                          <p className="text-sm font-medium mt-1">{emergency.description}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-sm font-medium mt-1 line-clamp-2">
+                            {emergency.description}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-2">
                             {formatDistanceToNow(emergency.createdAt, {
                               addSuffix: true,
                               locale: es,
@@ -167,13 +176,15 @@ export default function Home() {
         </CardContent>
       </Card>
 
-      {/* Botón de Emergencia */}
-      <Button size="lg" variant="destructive" className="w-full" asChild>
-        <Link to="/emergencies/create">
-          <AlertTriangle className="mr-2 h-5 w-5" />
-          Crear Emergencia
-        </Link>
-      </Button>
+      {/* Botón de Emergencia - Desktop: Botón completo, Mobile: FAB */}
+      {!isMobile ? (
+        <Button size="lg" variant="destructive" className="w-full" asChild>
+          <Link to="/emergencies/create">
+            <AlertTriangle className="mr-2 h-5 w-5" />
+            Crear Emergencia
+          </Link>
+        </Button>
+      ) : null}
 
       {/* Accesos rápidos */}
       <Card>
@@ -181,17 +192,36 @@ export default function Home() {
           <CardTitle>Accesos Rápidos</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-2">
-          <Button variant="outline" asChild>
+          <Button 
+            variant="outline" 
+            className="h-12 min-h-[44px] text-base" 
+            asChild
+          >
             <Link to="/emergencies">
               <Activity className="mr-2 h-4 w-4" />
               Ver Todas
             </Link>
           </Button>
-          <Button variant="outline" asChild>
+          <Button 
+            variant="outline" 
+            className="h-12 min-h-[44px] text-base" 
+            asChild
+          >
             <Link to="/accounts">Cuentas</Link>
           </Button>
         </CardContent>
       </Card>
+
+      {/* FAB para crear emergencia - Solo en móvil */}
+      {isMobile && (
+        <FAB
+          icon={AlertTriangle}
+          label="Crear Emergencia"
+          onClick={() => navigate('/emergencies/create')}
+          variant="destructive"
+          aria-label="Crear nueva emergencia"
+        />
+      )}
     </div>
   )
 }

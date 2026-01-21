@@ -36,7 +36,7 @@ export function Sidebar() {
   const location = useLocation()
 
   return (
-    <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:top-16 border-r bg-background">
+    <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:top-16 border-r bg-background z-30">
       <div className="flex-1 flex flex-col overflow-y-auto">
         <nav className="flex-1 px-2 py-4 space-y-1">
           {navigation.map((item) => {
@@ -46,19 +46,21 @@ export function Sidebar() {
                 key={item.name}
                 to={item.href}
                 className={cn(
-                  'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
+                  'group flex items-center px-3 py-2.5 text-sm font-medium rounded-md transition-all',
+                  'hover:bg-accent hover:text-accent-foreground',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground'
                 )}
               >
                 <item.icon
                   className={cn(
-                    'mr-3 h-5 w-5 flex-shrink-0',
-                    isActive ? 'text-primary-foreground' : 'text-muted-foreground'
+                    'mr-3 h-5 w-5 flex-shrink-0 transition-colors',
+                    isActive ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-accent-foreground'
                   )}
                 />
-                {item.name}
+                <span className="truncate">{item.name}</span>
               </Link>
             )
           })}

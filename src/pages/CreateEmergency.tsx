@@ -205,9 +205,10 @@ export default function CreateEmergency() {
           </div>
 
           {/* Botones */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 pt-2">
             <Button
               variant="destructive"
+              size="lg"
               onClick={handleCreateEmergency}
               disabled={submitting}
               className="flex-1"
@@ -224,7 +225,12 @@ export default function CreateEmergency() {
                 </>
               )}
             </Button>
-            <Button variant="outline" onClick={() => navigate(-1)} disabled={submitting}>
+            <Button 
+              variant="outline" 
+              size="lg"
+              onClick={() => navigate(-1)} 
+              disabled={submitting}
+            >
               Cancelar
             </Button>
           </div>
