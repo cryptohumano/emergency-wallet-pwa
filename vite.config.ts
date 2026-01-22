@@ -86,17 +86,28 @@ if (process.env.NODE_ENV === 'production' && (!basePath || basePath === '/')) {
 }
 
 // Plugin para transformar rutas en index.html durante el build
+// IMPORTANTE: Este plugin debe ejecutarse DESPUÉS de que Vite transforme los scripts
+// Por eso usamos enforce: 'post' para ejecutarlo al final
 const transformHtmlPlugin = () => {
   return {
     name: 'transform-html',
+    enforce: 'post', // Ejecutar después de otros plugins para que Vite ya haya transformado los scripts
     transformIndexHtml(html: string) {
       // En producción, reemplazar rutas absolutas con base path
       if (process.env.NODE_ENV === 'production' && basePath !== '/') {
         // Reemplazar rutas absolutas de favicons y otros assets estáticos
-        // Nota: Vite transforma automáticamente src="/src/main.tsx" a los archivos compilados
-        // Solo necesitamos ajustar las rutas de assets estáticos
-        return html
+        // Nota: Vite ya debería haber transformado src="/src/main.tsx" a los archivos compilados
+        // Solo necesitamos ajustar las rutas de assets estáticos que Vite no transforma
+        let transformed = html
           .replace(/href="\/(favicon|apple-touch-icon)/g, `href="${basePath}$1`)
+        
+        // Verificar que Vite haya transformado el script (debug)
+        if (transformed.includes('/src/main.tsx')) {
+          console.error('[transformHtmlPlugin] ❌ ERROR: HTML todavía contiene /src/main.tsx después de la transformación de Vite')
+          console.error('[transformHtmlPlugin] Esto significa que Vite no transformó el script correctamente')
+        }
+        
+        return transformed
       }
       return html
     },
