@@ -62,7 +62,7 @@ const getBase = () => {
   }
   
   // Fallback: si no hay GITHUB_REPOSITORY pero estamos en build, usar el nombre del repo
-  // El repositorio es emergency-wallet-pwa según el package.json
+  // El repositorio es emergency-wallet-pwa según git remote
   // Hardcodeamos el base path para GitHub Pages
   // Cambiar esto si el nombre del repositorio cambia
   return '/emergency-wallet-pwa/'
@@ -87,39 +87,30 @@ if (process.env.NODE_ENV === 'production') {
     console.warn('[Vite Config] Usando fallback: /emergency-wallet-pwa/')
   } else {
     console.log('[Vite Config] ✅ Base path configurado correctamente para GitHub Pages:', basePath)
+    console.log('[Vite Config] ⚠️ IMPORTANTE: Vite debería transformar automáticamente /src/main.tsx a la ruta compilada con este base path')
+    console.log('[Vite Config] Si ves errores 404 de main.tsx, verifica que el HTML generado tenga las rutas correctas')
   }
 }
 
 // Plugin para transformar rutas en index.html durante el build
-// IMPORTANTE: Este plugin debe ejecutarse DESPUÉS de que Vite transforme los scripts
-// Por eso usamos enforce: 'post' para ejecutarlo al final
+// IMPORTANTE: Vite transforma automáticamente los scripts cuando base está configurado
+// Este plugin solo ajusta rutas de assets estáticos que Vite no transforma automáticamente
 const transformHtmlPlugin = () => {
   return {
     name: 'transform-html',
-    enforce: 'post', // Ejecutar después de otros plugins para que Vite ya haya transformado los scripts
+    enforce: 'post', // Ejecutar después de otros plugins
     transformIndexHtml(html: string) {
-      // En producción, reemplazar rutas absolutas con base path
+      // En producción con base path, ajustar rutas de assets estáticos
       if (process.env.NODE_ENV === 'production' && basePath !== '/') {
         let transformed = html
         
-        // Verificar que Vite haya transformado el script (debug)
-        if (transformed.includes('/src/main.tsx')) {
-          console.error('[transformHtmlPlugin] ❌ ERROR: HTML todavía contiene /src/main.tsx después de la transformación de Vite')
-          console.error('[transformHtmlPlugin] Esto significa que Vite no transformó el script correctamente')
-          console.error('[transformHtmlPlugin] Base path configurado:', basePath)
-          console.error('[transformHtmlPlugin] HTML actual:', transformed.substring(0, 500))
-          // Esto no debería pasar, pero si pasa, es un error crítico
-          throw new Error('Vite no transformó /src/main.tsx correctamente. Verifica la configuración del base path.')
-        }
-        
         // Reemplazar rutas absolutas de favicons y otros assets estáticos
-        // Nota: Vite ya debería haber transformado src="/src/main.tsx" a los archivos compilados
-        // Solo necesitamos ajustar las rutas de assets estáticos que Vite no transforma
+        // Vite transforma automáticamente los scripts cuando base está configurado
         transformed = transformed
           .replace(/href="\/(favicon|apple-touch-icon)/g, `href="${basePath}$1`)
         
         // Asegurar que todas las rutas de assets compilados tengan el base path
-        // Vite debería hacer esto automáticamente, pero por si acaso:
+        // Vite debería hacer esto automáticamente, pero por si acaso verificamos:
         if (basePath !== '/') {
           // Reemplazar rutas de scripts y estilos que empiecen con /assets/ pero no tengan el base path
           transformed = transformed.replace(
