@@ -232,12 +232,15 @@ export function EmergencyButton({
         <Button
           variant="destructive"
           size="lg"
-          className="w-full sm:w-auto gap-2"
+          className="w-full sm:w-auto gap-2 critical-glow button-tactile relative overflow-hidden group"
           disabled={!log.milestones || log.milestones.length === 0}
           title={(!log.milestones || log.milestones.length === 0) ? 'Agrega al menos un milestone antes de activar una emergencia' : 'Activar emergencia'}
         >
-          <AlertTriangle className="h-5 w-5" />
-          EMERGENCIA
+          <span className="relative z-10 flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5" />
+            EMERGENCIA
+          </span>
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
@@ -327,7 +330,7 @@ export function EmergencyButton({
               variant="destructive"
               onClick={handleCreateEmergency}
               disabled={submitting}
-              className="flex-1"
+              className="flex-1 critical-glow button-tactile"
             >
               {submitting ? 'Enviando...' : 'Confirmar Emergencia'}
             </Button>

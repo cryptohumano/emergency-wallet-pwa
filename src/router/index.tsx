@@ -12,6 +12,8 @@ import EmergencyDetail from '@/pages/EmergencyDetail'
 import Transactions from '@/pages/Transactions'
 import Accounts from '@/pages/Accounts'
 import AccountDetail from '@/pages/AccountDetail'
+import CreateAccount from '@/pages/CreateAccount'
+import ImportAccount from '@/pages/ImportAccount'
 import Settings from '@/pages/Settings'
 
 // Obtener el base path desde import.meta.env.BASE_URL (configurado por Vite)
@@ -54,6 +56,14 @@ export const router = createBrowserRouter(
             {
               index: true,
               element: <Accounts />,
+            },
+            {
+              path: 'create',
+              element: <CreateAccount />,
+            },
+            {
+              path: 'import',
+              element: <ImportAccount />,
             },
             {
               path: ':address',

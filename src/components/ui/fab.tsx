@@ -6,6 +6,7 @@
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { LucideIcon } from 'lucide-react'
+import { useRadioMonitor } from '@/contexts/RadioMonitorContext'
 
 interface FABProps {
   icon: LucideIcon
@@ -16,6 +17,7 @@ interface FABProps {
   className?: string
   disabled?: boolean
   'aria-label'?: string
+  position?: 'left' | 'right'
 }
 
 export function FAB({
@@ -27,16 +29,26 @@ export function FAB({
   className,
   disabled = false,
   'aria-label': ariaLabel,
+  position = 'right',
 }: FABProps) {
+  const { isExpanded } = useRadioMonitor()
+  const positionClass = position === 'left' 
+    ? 'left-4 md:left-6 fab-emergency' 
+    : 'right-4 md:right-6 fab-navigation'
+  
   return (
     <div
       className={cn(
-        'fixed bottom-4 right-4 md:bottom-6 md:right-6 z-[100] pointer-events-auto',
-        'safe-area-inset-bottom safe-area-inset-right'
+        'fixed bottom-4 md:bottom-6 z-[100] pointer-events-auto',
+        positionClass,
+        'safe-area-inset-bottom',
+        position === 'left' ? 'safe-area-inset-left' : 'safe-area-inset-right',
+        'fab-dim', // Clase base para estado dim
+        isExpanded && 'fab-dim-active' // Activar dim cuando la tabla está expandida
       )}
       style={{
         bottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))',
-        right: 'max(1rem, env(safe-area-inset-right, 1rem))',
+        [position]: 'max(1rem, env(safe-area-inset-' + position + ', 1rem))',
       }}
     >
       <Button
@@ -45,11 +57,11 @@ export function FAB({
         onClick={onClick}
         disabled={disabled}
         className={cn(
-          'h-14 w-14 md:h-16 md:w-16 rounded-full shadow-lg hover:shadow-xl',
-          'transition-all duration-200',
+          'h-14 w-14 md:h-16 md:w-16 rounded-full',
+          'transition-all duration-300',
           'flex items-center justify-center',
           'active:scale-95', // Feedback táctil en móvil
-          variant === 'destructive' && 'critical-glow', // Glow effect para emergencias
+          // Los colores se aplican via CSS para asegurar visibilidad
           className
         )}
         aria-label={ariaLabel || label}

@@ -7,12 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { AlertTriangle, Activity } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useActiveAccount } from '@/contexts/ActiveAccountContext'
 import { useEmergency } from '@/hooks/useEmergency'
-import { useRemarkListenerContext } from '@/contexts/RemarkListenerContext'
-import { useCurrentChainBalance } from '@/hooks/useMultiChainBalances'
-import { useNetwork } from '@/contexts/NetworkContext'
-import { formatBalanceForDisplay, getChainSymbol } from '@/utils/balance'
 import { Badge } from '@/components/ui/badge'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale/es'
@@ -27,11 +22,7 @@ const BlockchainRadioMonitor = lazy(() => import('@/components/BlockchainRadioMo
 export default function Home() {
   const navigate = useNavigate()
   const isMobile = useIsMobile()
-  const { activeAccount } = useActiveAccount()
   const { emergencies } = useEmergency()
-  const { isListening } = useRemarkListenerContext()
-  const { selectedChain } = useNetwork()
-  const { balance } = useCurrentChainBalance(activeAccount)
 
   // Obtener emergencias activas
   const getActiveEmergencies = () => {
@@ -61,56 +52,6 @@ export default function Home() {
         <BlockchainRadioMonitor />
       </Suspense>
 
-      {/* Estado de escucha */}
-      <Card className="card-elevated fade-in">
-        <CardHeader>
-          <CardTitle>Estado del Sistema</CardTitle>
-          <CardDescription>Estado de conexión y escucha de emergencias</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-2">
-            {isListening ? (
-              <>
-                <div className="h-3 w-3 rounded-full bg-green-500 status-indicator shadow-lg shadow-green-500/50" />
-                <span className="text-sm font-medium text-green-700 dark:text-green-400">
-                  Escuchando emergencias...
-                </span>
-              </>
-            ) : (
-              <>
-                <div className="h-3 w-3 rounded-full bg-red-500 shadow-lg shadow-red-500/50" />
-                <span className="text-sm font-medium text-red-700 dark:text-red-400">
-                  No conectado
-                </span>
-              </>
-            )}
-          </div>
-          {activeAccount && (
-            <div className="mt-4 text-sm text-muted-foreground">
-              Cuenta activa: {activeAccount.substring(0, 8)}...
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Balance de cuenta activa */}
-      {activeAccount && selectedChain && (
-        <Card className="card-elevated fade-in">
-          <CardHeader>
-            <CardTitle>Balance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {balance ? (
-                formatBalanceForDisplay(balance.total, selectedChain.name)
-              ) : (
-                <span className="text-muted-foreground loading-shimmer">Cargando...</span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Emergencias Activas */}
       <Card className="card-elevated fade-in">
         <CardHeader>
@@ -138,19 +79,21 @@ export default function Home() {
                             <Badge
                               variant={
                                 emergency.severity === 'critical'
-                                  ? 'destructive'
+                                  ? 'emergency-critical'
                                   : emergency.severity === 'high'
-                                    ? 'destructive'
+                                    ? 'emergency-high'
                                     : emergency.severity === 'medium'
-                                      ? 'default'
-                                      : 'secondary'
+                                      ? 'emergency-medium'
+                                      : 'emergency-low'
                               }
                               className={`text-xs severity-badge ${
                                 emergency.severity === 'critical' ? 'severity-critical' :
                                 emergency.severity === 'high' ? 'severity-high' : ''
                               }`}
                             >
-                              {emergency.severity}
+                              {emergency.severity === 'critical' ? 'CRÍTICA' :
+                               emergency.severity === 'high' ? 'ALTA' :
+                               emergency.severity === 'medium' ? 'MEDIA' : 'BAJA'}
                             </Badge>
                             <Badge variant="outline" className="text-xs">
                               {emergency.type}
@@ -193,39 +136,14 @@ export default function Home() {
         </Button>
       ) : null}
 
-      {/* Accesos rápidos */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Accesos Rápidos</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-2">
-          <Button 
-            variant="outline" 
-            className="h-12 min-h-[44px] text-base" 
-            asChild
-          >
-            <Link to="/emergencies">
-              <Activity className="mr-2 h-4 w-4" />
-              Ver Todas
-            </Link>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="h-12 min-h-[44px] text-base" 
-            asChild
-          >
-            <Link to="/accounts">Cuentas</Link>
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* FAB para crear emergencia - Solo en móvil */}
+      {/* FAB para crear emergencia - Solo en móvil, posicionado a la izquierda para usuarios diestros */}
       {isMobile && (
         <FAB
           icon={AlertTriangle}
           label="Crear Emergencia"
           onClick={() => navigate('/emergencies/create')}
           variant="destructive"
+          position="left"
           aria-label="Crear nueva emergencia"
         />
       )}

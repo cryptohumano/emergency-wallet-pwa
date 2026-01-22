@@ -226,6 +226,50 @@ export function EmergencyMap({ emergency, className }: EmergencyMapProps) {
 
         console.log('[EmergencyMap] ✅ Mapa inicializado correctamente')
 
+        // Agregar marcador de emergencia inmediatamente después de inicializar el mapa
+        // Esto asegura que siempre esté visible, independientemente del estado del log
+        const emergencyLocation = emergency.location
+        if (
+          emergencyLocation &&
+          typeof emergencyLocation.latitude === 'number' &&
+          typeof emergencyLocation.longitude === 'number' &&
+          !isNaN(emergencyLocation.latitude) &&
+          !isNaN(emergencyLocation.longitude)
+        ) {
+          try {
+            const initialMarker = L.marker(
+              [emergencyLocation.latitude, emergencyLocation.longitude],
+              {
+                icon: EmergencyIcon,
+                zIndexOffset: 1000,
+                interactive: true,
+                keyboard: true,
+                title: 'Ubicación de Emergencia',
+              }
+            ).addTo(map)
+
+            initialMarker.bindPopup(`
+              <div>
+                <strong>🚨 Ubicación de Emergencia</strong><br/>
+                Lat: ${emergencyLocation.latitude.toFixed(6)}<br/>
+                Lon: ${emergencyLocation.longitude.toFixed(6)}<br/>
+                ${emergencyLocation.altitude ? `Altitud: ${emergencyLocation.altitude.toFixed(0)} m<br/>` : ''}
+                ${emergencyLocation.accuracy ? `Precisión: ${emergencyLocation.accuracy.toFixed(0)} m` : ''}
+              </div>
+            `)
+
+            // Guardar referencia
+            emergencyMarkerRef.current = initialMarker
+
+            // Centrar el mapa en la emergencia
+            map.setView([emergencyLocation.latitude, emergencyLocation.longitude], 13)
+
+            console.log('[EmergencyMap] ✅ Marcador de emergencia agregado durante inicialización')
+          } catch (error) {
+            console.error('[EmergencyMap] ❌ Error al agregar marcador inicial:', error)
+          }
+        }
+
         // Invalidar tamaño después de que el mapa esté listo
         // Usar múltiples requestAnimationFrame para asegurar que el DOM esté completamente renderizado
         const invalidateSize = () => {
@@ -282,6 +326,16 @@ export function EmergencyMap({ emergency, className }: EmergencyMapProps) {
     return () => {
       clearTimeout(initTimeout)
       console.log('[EmergencyMap] 🧹 Limpiando mapa')
+      if (emergencyMarkerRef.current) {
+        try {
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.removeLayer(emergencyMarkerRef.current)
+          }
+        } catch (error) {
+          console.warn('[EmergencyMap] ⚠️ Error al remover marcador:', error)
+        }
+        emergencyMarkerRef.current = null
+      }
       if (mapInstanceRef.current) {
         try {
           mapInstanceRef.current.remove()
@@ -293,19 +347,78 @@ export function EmergencyMap({ emergency, className }: EmergencyMapProps) {
     }
   }, [emergency.location.latitude, emergency.location.longitude]) // Dependencias específicas
 
+  // Referencia para el marcador de emergencia (para poder limpiarlo correctamente)
+  const emergencyMarkerRef = useRef<L.Marker | null>(null)
+
   // Actualizar mapa cuando se carga el log o cambia la emergencia
   useEffect(() => {
-    if (!mapInstanceRef.current) return
+    if (!mapInstanceRef.current) {
+      console.warn('[EmergencyMap] ⚠️ Mapa no está inicializado, esperando...')
+      // Intentar de nuevo después de un delay
+      const retryTimeout = setTimeout(() => {
+        if (mapInstanceRef.current) {
+          // Forzar re-ejecución del efecto
+          console.log('[EmergencyMap] 🔄 Reintentando agregar marcadores...')
+        }
+      }, 500)
+      return () => clearTimeout(retryTimeout)
+    }
+
+    // Verificar que el mapa esté completamente inicializado
+    if (!mapInstanceRef.current.getContainer()) {
+      console.warn('[EmergencyMap] ⚠️ Contenedor del mapa no está disponible')
+      return
+    }
 
     const map = mapInstanceRef.current
     const emergencyLocation = emergency.location
 
-    // Limpiar marcadores y rutas anteriores
+    // Validar que las coordenadas sean válidas
+    if (
+      !emergencyLocation ||
+      typeof emergencyLocation.latitude !== 'number' ||
+      typeof emergencyLocation.longitude !== 'number' ||
+      isNaN(emergencyLocation.latitude) ||
+      isNaN(emergencyLocation.longitude)
+    ) {
+      console.error('[EmergencyMap] ❌ Coordenadas de emergencia inválidas:', emergencyLocation)
+      return
+    }
+
+    console.log('[EmergencyMap] 🗺️ Actualizando marcadores para emergencia en:', [
+      emergencyLocation.latitude,
+      emergencyLocation.longitude
+    ])
+
+    // Limpiar marcadores y rutas anteriores (excepto las capas de tiles y el marcador de emergencia)
     map.eachLayer((layer) => {
-      if (layer instanceof L.Marker || layer instanceof L.Polyline) {
+      if (layer instanceof L.Polyline) {
+        map.removeLayer(layer)
+      } else if (layer instanceof L.Marker && layer !== emergencyMarkerRef.current) {
+        // No remover el marcador de emergencia si ya existe
         map.removeLayer(layer)
       }
     })
+
+    // Si el marcador de emergencia ya existe, actualizar su posición si es necesario
+    if (emergencyMarkerRef.current && map.hasLayer(emergencyMarkerRef.current)) {
+      const currentLatLng = emergencyMarkerRef.current.getLatLng()
+      const newLatLng: [number, number] = [emergencyLocation.latitude, emergencyLocation.longitude]
+      
+      // Solo actualizar si las coordenadas son diferentes
+      if (
+        Math.abs(currentLatLng.lat - newLatLng[0]) > 0.0001 ||
+        Math.abs(currentLatLng.lng - newLatLng[1]) > 0.0001
+      ) {
+        emergencyMarkerRef.current.setLatLng(newLatLng)
+        console.log('[EmergencyMap] ✅ Posición del marcador de emergencia actualizada')
+      }
+    } else {
+      // Si no existe, limpiar referencia
+      if (emergencyMarkerRef.current) {
+        emergencyMarkerRef.current = null
+      }
+    }
 
     let allPoints: GPSPoint[] = []
     let routePoints: [number, number][] = []
@@ -343,23 +456,67 @@ export function EmergencyMap({ emergency, className }: EmergencyMapProps) {
       }
     }
 
-    // Agregar marcador de emergencia (rojo) - siempre visible
-    const emergencyMarker = L.marker(
-      [emergencyLocation.latitude, emergencyLocation.longitude],
-      {
-        icon: EmergencyIcon,
-      }
-    ).addTo(map)
+    // Agregar marcador de emergencia (rojo) - SIEMPRE visible
+    try {
+      const emergencyMarker = L.marker(
+        [emergencyLocation.latitude, emergencyLocation.longitude],
+        {
+          icon: EmergencyIcon,
+          zIndexOffset: 1000, // Asegurar que esté por encima de otros marcadores
+          interactive: true,
+          keyboard: true,
+          title: 'Ubicación de Emergencia',
+        }
+      ).addTo(map)
 
-    emergencyMarker.bindPopup(`
-      <div>
-        <strong>🚨 Ubicación de Emergencia</strong><br/>
-        Lat: ${emergencyLocation.latitude.toFixed(6)}<br/>
-        Lon: ${emergencyLocation.longitude.toFixed(6)}<br/>
-        ${emergencyLocation.altitude ? `Altitud: ${emergencyLocation.altitude.toFixed(0)} m<br/>` : ''}
-        ${emergencyLocation.accuracy ? `Precisión: ${emergencyLocation.accuracy.toFixed(0)} m` : ''}
-      </div>
-    `).openPopup()
+      // Verificar que el marcador se agregó correctamente
+      if (!map.hasLayer(emergencyMarker)) {
+        console.error('[EmergencyMap] ❌ El marcador no se agregó al mapa')
+        // Intentar agregar de nuevo con el icono por defecto
+        emergencyMarker.setIcon(DefaultIcon)
+        if (!map.hasLayer(emergencyMarker)) {
+          console.error('[EmergencyMap] ❌ Fallo al agregar marcador incluso con icono por defecto')
+        }
+      }
+
+      emergencyMarker.bindPopup(`
+        <div>
+          <strong>🚨 Ubicación de Emergencia</strong><br/>
+          Lat: ${emergencyLocation.latitude.toFixed(6)}<br/>
+          Lon: ${emergencyLocation.longitude.toFixed(6)}<br/>
+          ${emergencyLocation.altitude ? `Altitud: ${emergencyLocation.altitude.toFixed(0)} m<br/>` : ''}
+          ${emergencyLocation.accuracy ? `Precisión: ${emergencyLocation.accuracy.toFixed(0)} m` : ''}
+        </div>
+      `)
+
+      // Abrir popup después de un pequeño delay para asegurar que el marcador esté renderizado
+      setTimeout(() => {
+        if (emergencyMarker && map.hasLayer(emergencyMarker)) {
+          emergencyMarker.openPopup()
+        }
+      }, 100)
+
+      // Guardar referencia para poder limpiarlo después
+      emergencyMarkerRef.current = emergencyMarker
+
+      console.log('[EmergencyMap] ✅ Marcador de emergencia agregado correctamente en:', [
+        emergencyLocation.latitude,
+        emergencyLocation.longitude
+      ])
+    } catch (error) {
+      console.error('[EmergencyMap] ❌ Error al agregar marcador de emergencia:', error)
+      // Intentar agregar un marcador simple como último recurso
+      try {
+        const simpleMarker = L.marker(
+          [emergencyLocation.latitude, emergencyLocation.longitude],
+          { icon: DefaultIcon }
+        ).addTo(map)
+        emergencyMarkerRef.current = simpleMarker
+        console.log('[EmergencyMap] ✅ Marcador de emergencia agregado con icono por defecto')
+      } catch (fallbackError) {
+        console.error('[EmergencyMap] ❌ Error crítico al agregar marcador:', fallbackError)
+      }
+    }
 
     // Ajustar vista del mapa
     if (routePoints.length > 0) {
@@ -374,7 +531,7 @@ export function EmergencyMap({ emergency, className }: EmergencyMapProps) {
       // Si no hay ruta, solo centrar en la emergencia
       map.setView([emergencyLocation.latitude, emergencyLocation.longitude], 13)
     }
-  }, [log, emergency])
+  }, [log, emergency, emergency.location.latitude, emergency.location.longitude])
 
   return (
     <Card className={className}>

@@ -205,13 +205,13 @@ export default function CreateEmergency() {
           </div>
 
           {/* Botones */}
-          <div className="flex gap-2 pt-2">
+          <div className="flex flex-col sm:flex-row gap-2 pt-2">
             <Button
               variant="destructive"
               size="lg"
               onClick={handleCreateEmergency}
               disabled={submitting}
-              className="flex-1"
+              className="w-full sm:flex-1 min-h-[44px]"
             >
               {submitting ? (
                 <>
@@ -230,6 +230,7 @@ export default function CreateEmergency() {
               size="lg"
               onClick={() => navigate(-1)} 
               disabled={submitting}
+              className="w-full sm:flex-1 min-h-[44px]"
             >
               Cancelar
             </Button>

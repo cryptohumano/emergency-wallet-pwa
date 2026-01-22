@@ -20,11 +20,22 @@ export function NetworkSwitcher({ selectedChain, onSelectChain, isConnecting }: 
   return (
     <div className="flex items-center gap-2">
       {isConnecting ? (
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        <div className="relative">
+          <Loader2 className="h-4 w-4 animate-spin" style={{ color: 'hsl(var(--status-connecting))' }} />
+          <div className="absolute inset-0 rounded-full animate-ping" style={{ 
+            backgroundColor: 'hsl(var(--status-connecting) / 0.3)',
+            animation: 'ping 1s cubic-bezier(0, 0, 0.2, 1) infinite'
+          }} />
+        </div>
       ) : selectedChain ? (
-        <Wifi className="h-4 w-4 text-green-500" />
+        <div className="relative">
+          <Wifi className="h-4 w-4 status-connected" style={{ color: 'hsl(var(--status-connected))' }} />
+          <div className="absolute inset-0 rounded-full status-indicator" style={{ 
+            backgroundColor: 'hsl(var(--status-connected) / 0.2)'
+          }} />
+        </div>
       ) : (
-        <WifiOff className="h-4 w-4 text-muted-foreground" />
+        <WifiOff className="h-4 w-4" style={{ color: 'hsl(var(--status-disconnected))' }} />
       )}
       <Select
         value={selectedChain?.endpoint || ''}

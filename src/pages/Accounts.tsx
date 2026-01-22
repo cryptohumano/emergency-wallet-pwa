@@ -21,22 +21,22 @@ export default function Accounts() {
     return `${address.slice(0, 10)}...${address.slice(-10)}`
   }
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Cuentas</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Cuentas</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">
             Gestiona tus cuentas del keyring
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button asChild variant="outline">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
             <Link to="/accounts/import">
               <Download className="mr-2 h-4 w-4" />
               Importar
             </Link>
           </Button>
-          <Button asChild>
+          <Button asChild size="sm" className="w-full sm:w-auto">
             <Link to="/accounts/create">
               <Plus className="mr-2 h-4 w-4" />
               Crear Cuenta
@@ -71,7 +71,7 @@ export default function Accounts() {
               {accounts.map((account) => (
                 <div
                   key={account.address}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex items-center gap-4 flex-1 min-w-0">
                     <Avatar className="h-10 w-10 flex-shrink-0">
@@ -87,14 +87,14 @@ export default function Accounts() {
                           {account.meta.name || 'Sin nombre'}
                         </h3>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <code className="text-xs text-muted-foreground font-mono">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <code className="text-xs text-muted-foreground font-mono break-all">
                           {formatAddress(account.address)}
                         </code>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-6 w-6 p-0"
+                          className="h-6 w-6 p-0 flex-shrink-0"
                           onClick={() => handleCopyAddress(account.address)}
                           title="Copiar dirección"
                         >
@@ -106,7 +106,7 @@ export default function Accounts() {
                         </Button>
                       </div>
                       {account.meta.tags && account.meta.tags.length > 0 && (
-                        <div className="flex gap-1 mt-2">
+                        <div className="flex gap-1 mt-2 flex-wrap">
                           {account.meta.tags.map((tag: string) => (
                             <span
                               key={tag}
@@ -119,11 +119,12 @@ export default function Accounts() {
                       )}
                     </div>
                   </div>
-                  <div className="flex gap-2 flex-shrink-0">
-                    <Button asChild variant="outline" size="sm">
+                  <div className="flex gap-2 flex-shrink-0 sm:self-center">
+                    <Button asChild variant="outline" size="sm" className="text-xs sm:text-sm w-full sm:w-auto">
                       <Link to={`/accounts/${account.address}`}>
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        Ver Detalles
+                        <ExternalLink className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                        <span className="hidden sm:inline">Ver Detalles</span>
+                        <span className="sm:hidden">Detalles</span>
                       </Link>
                     </Button>
                   </div>

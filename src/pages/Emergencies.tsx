@@ -90,34 +90,50 @@ export default function Emergencies() {
 }
 
 function EmergencyCard({ emergency }: { emergency: Emergency }) {
+  const isCritical = emergency.severity === 'critical'
+  const isHigh = emergency.severity === 'high'
+  
   return (
     <Link to={`/emergencies/${emergency.emergencyId}`} className="block fade-in">
-      <Card className="emergency-card card-elevated active:scale-[0.98] cursor-pointer min-h-[80px]">
-        <CardContent className="pt-4 pb-4">
+      <Card className={`
+        emergency-card 
+        card-elevated 
+        interactive
+        active:scale-[0.98] 
+        cursor-pointer 
+        min-h-[80px]
+        group
+        relative
+        overflow-hidden
+        ${isCritical ? 'emergency-alert' : ''}
+      `}>
+        <CardContent className="pt-4 pb-4 relative z-10">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 space-y-2 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge
                   variant={
                     emergency.severity === 'critical'
-                      ? 'destructive'
+                      ? 'emergency-critical'
                       : emergency.severity === 'high'
-                        ? 'destructive'
+                        ? 'emergency-high'
                         : emergency.severity === 'medium'
-                          ? 'default'
-                          : 'secondary'
+                          ? 'emergency-medium'
+                          : 'emergency-low'
                   }
                   className={`text-xs severity-badge ${
                     emergency.severity === 'critical' ? 'severity-critical' :
                     emergency.severity === 'high' ? 'severity-high' : ''
                   }`}
                 >
-                  {emergency.severity}
+                  {emergency.severity === 'critical' ? 'CRÍTICA' :
+                   emergency.severity === 'high' ? 'ALTA' :
+                   emergency.severity === 'medium' ? 'MEDIA' : 'BAJA'}
                 </Badge>
                 <Badge variant="outline">{emergency.type}</Badge>
                 <Badge variant="outline">{emergency.status}</Badge>
               </div>
-              <p className="text-sm font-medium">{emergency.description}</p>
+              <p className="text-sm font-medium line-clamp-2">{emergency.description}</p>
               <div className="flex items-center gap-4 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <MapPin className="h-3 w-3" />
@@ -137,7 +153,13 @@ function EmergencyCard({ emergency }: { emergency: Emergency }) {
                 </div>
               </div>
             </div>
-            <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0" />
+            <AlertTriangle className={`
+              h-5 w-5 
+              flex-shrink-0
+              transition-transform duration-300
+              group-hover:scale-110
+              ${isCritical ? 'text-destructive animate-pulse' : 'text-destructive'}
+            `} />
           </div>
         </CardContent>
       </Card>

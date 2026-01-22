@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Radio, Activity, AlertTriangle, X, Power, PowerOff, MapPin, Clock, ExternalLink, Bell, BellOff } from 'lucide-react'
 import { useRemarkListenerContext } from '@/contexts/RemarkListenerContext'
+import { useActiveAccount } from '@/contexts/ActiveAccountContext'
+import { useRadioMonitor } from '@/contexts/RadioMonitorContext'
 import { formatDistanceToNow, format } from 'date-fns'
 import { es } from 'date-fns/locale/es'
 import { useState, useMemo, useEffect } from 'react'
@@ -18,6 +20,7 @@ import { getAllEmergencies } from '@/utils/emergencyStorage'
 import type { Emergency } from '@/types/emergencies'
 import { EmergencyMap } from '@/components/emergencies/EmergencyMap'
 import { toast } from 'sonner'
+import Identicon from '@polkadot/react-identicon'
 
 export function BlockchainRadioMonitor() {
   const { 
@@ -31,7 +34,8 @@ export function BlockchainRadioMonitor() {
     startListener,
     stopListener
   } = useRemarkListenerContext()
-  const [isExpanded, setIsExpanded] = useState(false)
+  const { activeAccount, activeAccountData } = useActiveAccount()
+  const { isExpanded, setIsExpanded } = useRadioMonitor()
   const [filter, setFilter] = useState<'all' | 'System.Remarked' | 'emergencies'>('all')
   const [selectedEmergency, setSelectedEmergency] = useState<Emergency | null>(null)
   const [selectedEvent, setSelectedEvent] = useState<BlockchainEvent | null>(null) // Evento seleccionado para mostrar data
@@ -284,7 +288,7 @@ export function BlockchainRadioMonitor() {
 
         {/* Segunda fila: Estado y controles - responsive */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-          {/* Estado y bloque */}
+          {/* Estado, bloque y cuenta activa */}
           <div className="flex items-center gap-2 flex-wrap">
             {isListening ? (
               <Badge variant="default" className="gap-1">
@@ -304,6 +308,22 @@ export function BlockchainRadioMonitor() {
                 <Activity className="h-3 w-3" />
                 <span className="hidden sm:inline">Bloque #{currentBlockNumber.toLocaleString()}</span>
                 <span className="sm:hidden">#{currentBlockNumber.toLocaleString()}</span>
+              </Badge>
+            )}
+            {/* Cuenta activa integrada */}
+            {activeAccount && activeAccountData && (
+              <Badge variant="outline" className="gap-1.5 text-xs">
+                <Identicon
+                  value={activeAccount}
+                  size={12}
+                  theme="polkadot"
+                />
+                <span className="hidden sm:inline">
+                  {activeAccountData.meta.name || 'Cuenta'}
+                </span>
+                <span className="sm:hidden">
+                  {activeAccount.substring(0, 6)}...
+                </span>
               </Badge>
             )}
           </div>

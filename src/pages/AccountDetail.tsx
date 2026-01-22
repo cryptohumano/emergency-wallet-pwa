@@ -111,31 +111,31 @@ export default function AccountDetail() {
   const primaryChain = balances.length > 0 ? balances[0].chainName : 'Polkadot'
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button asChild variant="ghost" size="sm">
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <Button asChild variant="ghost" size="sm" className="flex-shrink-0">
             <Link to="/accounts">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Volver
+              <ArrowLeft className="mr-1 sm:mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Volver</span>
             </Link>
           </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Detalles de la Cuenta</h1>
-            <p className="text-muted-foreground mt-1">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Detalles de la Cuenta</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               Información completa y balances multi-cadena
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button asChild variant="outline">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
             <Link to={`/send?from=${address}`}>
               <Send className="mr-2 h-4 w-4" />
               Enviar
             </Link>
           </Button>
-          <Button variant="destructive" onClick={handleDeleteAccount}>
+          <Button variant="destructive" size="sm" onClick={handleDeleteAccount} className="w-full sm:w-auto">
             <Trash2 className="mr-2 h-4 w-4" />
             Eliminar
           </Button>
@@ -171,8 +171,8 @@ export default function AccountDetail() {
                   </Badge>
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                <code className="text-sm font-mono text-muted-foreground break-all">
+              <div className="flex items-center gap-2 flex-wrap">
+                <code className="text-xs sm:text-sm font-mono text-muted-foreground break-all">
                   {account.address}
                 </code>
                 <Button
@@ -304,15 +304,15 @@ export default function AccountDetail() {
           ) : (
             <div className="space-y-4">
               {/* Balance Total */}
-              <div className="p-4 bg-primary/10 rounded-lg border-2 border-primary/20">
+              <div className="p-3 sm:p-4 bg-primary/10 rounded-lg border-2 border-primary/20">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Balance Total (Todas las Cadenas)</p>
-                    <p className="text-2xl font-bold mt-1">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm text-muted-foreground">Balance Total (Todas las Cadenas)</p>
+                    <p className="text-lg sm:text-xl md:text-2xl font-bold mt-1 break-words">
                       {formatBalanceForDisplay(totalBalance, primaryChain)}
                     </p>
                   </div>
-                  <Shield className="h-8 w-8 text-primary" />
+                  <Shield className="h-6 w-6 sm:h-8 sm:w-8 text-primary flex-shrink-0 ml-2" />
                 </div>
               </div>
 
@@ -379,29 +379,29 @@ export default function AccountDetail() {
           <CardTitle>Acciones Rápidas</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-            <Button asChild variant="outline" className="w-full">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
+            <Button asChild variant="outline" size="sm" className="w-full">
               <Link to={`/send?from=${address}`}>
-                <Send className="mr-2 h-4 w-4" />
-                Enviar
+                <Send className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="text-xs sm:text-sm">Enviar</span>
               </Link>
             </Button>
-            <Button asChild variant="outline" className="w-full">
+            <Button asChild variant="outline" size="sm" className="w-full">
               <Link to={`/receive?address=${address}`}>
-                <Download className="mr-2 h-4 w-4" />
-                Recibir
+                <Download className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="text-xs sm:text-sm">Recibir</span>
               </Link>
             </Button>
-            <Button asChild variant="outline" className="w-full">
+            <Button asChild variant="outline" size="sm" className="w-full">
               <Link to={`/identity?address=${address}`}>
-                <Shield className="mr-2 h-4 w-4" />
-                Identidad
+                <Shield className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="text-xs sm:text-sm">Identidad</span>
               </Link>
             </Button>
-            <Button asChild variant="outline" className="w-full">
+            <Button asChild variant="outline" size="sm" className="w-full">
               <Link to={`/transactions?account=${address}`}>
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Transacciones
+                <ExternalLink className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="text-xs sm:text-sm">Transacciones</span>
               </Link>
             </Button>
           </div>

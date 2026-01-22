@@ -13,8 +13,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useKeyringContext } from '@/contexts/KeyringContext'
-import { Wallet, Shield, Lock, Sparkles, Key, FileText, Upload } from 'lucide-react'
+import { Wallet, Shield, Lock, Sparkles, Key, FileText, Upload, Info, X } from 'lucide-react'
 import { BackupManager } from '@/components/BackupManager'
+import { cn } from '@/lib/utils'
 
 export default function Onboarding() {
   const navigate = useNavigate()
@@ -30,6 +31,7 @@ export default function Onboarding() {
   const [shouldRedirect, setShouldRedirect] = useState(false)
   const [showImportDialog, setShowImportDialog] = useState(false)
   const [showBackupDialog, setShowBackupDialog] = useState(false)
+  const [showInfoAlert, setShowInfoAlert] = useState(false)
 
   // Si ya está desbloqueado, redirigir a home (usar useEffect para evitar render durante render)
   useEffect(() => {
@@ -100,15 +102,59 @@ export default function Onboarding() {
   if (step === 'welcome') {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background to-muted">
+        {/* Botón de información fuera de la card */}
+        <div className="fixed top-4 right-4 z-10">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setShowInfoAlert(!showInfoAlert)}
+            className="rounded-full shadow-lg"
+            aria-label="Mostrar información importante"
+          >
+            {showInfoAlert ? (
+              <X className="h-4 w-4" />
+            ) : (
+              <Info className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+
+        {/* Alert colapsable fuera de la card */}
+        {showInfoAlert && (
+          <div className="fixed top-16 right-4 left-4 sm:left-auto sm:max-w-md z-10 animate-in slide-in-from-top-2">
+            <Alert className="shadow-2xl">
+              <Shield className="h-4 w-4" />
+              <AlertDescription className="text-sm">
+                <strong>Importante:</strong> Emergency Wallet es una aplicación no custodial.
+                Tú eres el único responsable de tus claves privadas y fondos. 
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li>Guarda tu frase de recuperación (mnemonic) en un lugar seguro</li>
+                  <li>Nunca compartas tu frase de recuperación con nadie</li>
+                  <li>Si pierdes tu frase de recuperación, perderás acceso permanente a tus fondos</li>
+                  <li>No hay forma de recuperar tu cuenta sin la frase de recuperación</li>
+                </ul>
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+
         <Card className="w-full max-w-2xl">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
               <Sparkles className="h-8 w-8 text-primary" />
             </div>
-            <CardTitle className="text-3xl">Bienvenido a Aura Wallet</CardTitle>
+            <CardTitle className="text-3xl">Bienvenido a Emergency Wallet</CardTitle>
             <CardDescription className="text-lg mt-2">
-              Tu wallet criptográfica segura y privada
+              Tu wallet criptográfica segura y privada para emergencias
             </CardDescription>
+            <div className="mt-4 p-4 bg-muted/50 rounded-lg border">
+              <p className="text-sm text-muted-foreground text-left">
+                <strong>Emergency Wallet</strong> es una aplicación blockchain diseñada para detectar, 
+                gestionar y responder a emergencias en tiempo real. Monitorea la blockchain en busca de 
+                llamados de emergencia, indexa eventos críticos y te permite crear y gestionar tus propias 
+                emergencias de forma segura y descentralizada.
+              </p>
+            </div>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid md:grid-cols-3 gap-4">
@@ -238,20 +284,6 @@ export default function Onboarding() {
                 </div>
               </DialogContent>
             </Dialog>
-
-            <Alert>
-              <Shield className="h-4 w-4" />
-              <AlertDescription className="text-sm">
-                <strong>Importante:</strong> Aura Wallet es una aplicación no custodial.
-                Tú eres el único responsable de tus claves privadas y fondos. 
-                <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li>Guarda tu frase de recuperación (mnemonic) en un lugar seguro</li>
-                  <li>Nunca compartas tu frase de recuperación con nadie</li>
-                  <li>Si pierdes tu frase de recuperación, perderás acceso permanente a tus fondos</li>
-                  <li>No hay forma de recuperar tu cuenta sin la frase de recuperación</li>
-                </ul>
-              </AlertDescription>
-            </Alert>
           </CardContent>
         </Card>
       </div>

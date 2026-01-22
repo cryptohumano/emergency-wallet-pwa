@@ -15,6 +15,15 @@ const badgeVariants = cva(
         destructive:
           "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
         outline: "text-foreground",
+        // Variantes de severidad de emergencias
+        "emergency-critical":
+          "border-transparent bg-emergency-critical text-white shadow hover:bg-emergency-critical/90",
+        "emergency-high":
+          "border-transparent bg-emergency-high text-white shadow hover:bg-emergency-high/90",
+        "emergency-medium":
+          "border-transparent bg-emergency-medium text-white shadow hover:bg-emergency-medium/90",
+        "emergency-low":
+          "border-transparent bg-emergency-low text-white shadow hover:bg-emergency-low/90",
       },
     },
     defaultVariants: {

@@ -104,10 +104,10 @@ export function EmergencyPanel({ logId, log, onEmergencyUpdate }: EmergencyPanel
 
   const getSeverityColor = (severity: Emergency['severity']) => {
     const colors: Record<Emergency['severity'], string> = {
-      low: 'text-blue-600 dark:text-blue-400',
-      medium: 'text-yellow-600 dark:text-yellow-400',
-      high: 'text-orange-600 dark:text-orange-400',
-      critical: 'text-red-600 dark:text-red-400',
+      low: 'text-emergency-low',
+      medium: 'text-emergency-medium',
+      high: 'text-emergency-high',
+      critical: 'text-emergency-critical',
     }
     return colors[severity] || colors.medium
   }
@@ -116,11 +116,20 @@ export function EmergencyPanel({ logId, log, onEmergencyUpdate }: EmergencyPanel
     <>
       {/* Panel de emergencia activa */}
       {activeEmergency && (
-        <Card className="border-destructive/50 bg-destructive/5 mb-4">
+        <Card className={`
+          border-destructive/50 
+          bg-destructive/5 
+          mb-4
+          emergency-card
+          ${activeEmergency.severity === 'critical' ? 'emergency-alert' : ''}
+        `}>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-destructive text-lg">
-                <AlertTriangle className="h-5 w-5" />
+                <AlertTriangle className={`
+                  h-5 w-5
+                  ${activeEmergency.severity === 'critical' ? 'animate-pulse' : ''}
+                `} />
                 Emergencia Activa
               </CardTitle>
               {getStatusBadge(activeEmergency.status)}

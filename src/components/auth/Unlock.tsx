@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useKeyringContext } from '@/contexts/KeyringContext'
-import { Lock, Fingerprint, Eye, EyeOff } from 'lucide-react'
+import { Lock, Fingerprint, Eye, EyeOff, Info, X } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export function Unlock() {
@@ -14,6 +14,8 @@ export function Unlock() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [showInfoAlert, setShowInfoAlert] = useState(false)
+  const [logoError, setLogoError] = useState(false)
 
   const handleUnlock = async () => {
     setError('')
@@ -60,21 +62,54 @@ export function Unlock() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background to-muted">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-            <Lock className="h-8 w-8 text-primary" />
-          </div>
-          <CardTitle className="text-2xl">Desbloquear Wallet</CardTitle>
-          <CardDescription>
-            Ingresa tu contraseña para acceder a tu wallet
-            {hasWebAuthnCredentials && ' o usa WebAuthn'}
-          </CardDescription>
-          <Alert className="mt-4">
+      {/* Botón de información fuera de la card */}
+      <div className="fixed top-4 right-4 z-10">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setShowInfoAlert(!showInfoAlert)}
+          className="rounded-full shadow-lg"
+          aria-label="Mostrar información importante"
+        >
+          {showInfoAlert ? (
+            <X className="h-4 w-4" />
+          ) : (
+            <Info className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
+
+      {/* Alert colapsable fuera de la card */}
+      {showInfoAlert && (
+        <div className="fixed top-16 right-4 left-4 sm:left-auto sm:max-w-md z-10 animate-in slide-in-from-top-2">
+          <Alert className="shadow-2xl">
             <AlertDescription className="text-sm">
               <strong>Nota:</strong> Si acabas de importar un backup, usa la contraseña que usaste al exportar el backup.
             </AlertDescription>
           </Alert>
+        </div>
+      )}
+
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          {/* Logo de la PWA */}
+          <div className="mx-auto mb-4 w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+            {!logoError ? (
+              <img 
+                src="/web-app-manifest-192x192.png" 
+                alt="Emergency Wallet Logo" 
+                className="w-full h-full object-cover"
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <Lock className="h-8 w-8 text-primary" />
+            )}
+          </div>
+          <CardTitle className="text-2xl">Desbloquear Emergency Wallet</CardTitle>
+          <CardDescription>
+            Ingresa tu contraseña para acceder a tu wallet
+            {hasWebAuthnCredentials && ' o usa WebAuthn'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="password" className="w-full">

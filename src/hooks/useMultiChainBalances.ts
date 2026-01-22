@@ -23,6 +23,35 @@ export interface MultiChainBalanceResult {
 }
 
 /**
+ * Valida si una cadena es una dirección válida de Substrate/Polkadot
+ * Las direcciones SS58 generalmente tienen al menos 32 caracteres y no son palabras reservadas
+ */
+function isValidSubstrateAddress(address: string | null): boolean {
+  if (!address) return false
+  
+  // Palabras reservadas que no son direcciones válidas
+  const reservedWords = ['create', 'import', 'settings', 'accounts', 'emergencies', 'transactions', 'documents', 'identity', 'contacts']
+  if (reservedWords.includes(address.toLowerCase())) {
+    return false
+  }
+  
+  // Las direcciones SS58 tienen al menos 32 caracteres (después de decodificar)
+  // Pero en formato SS58 pueden tener entre 32-48 caracteres
+  // Por seguridad, verificamos que tenga al menos 20 caracteres y no sea solo números
+  if (address.length < 20) {
+    return false
+  }
+  
+  // Verificar que no sea solo números o caracteres especiales
+  // Las direcciones SS58 contienen letras y números
+  if (!/^[A-Za-z0-9]+$/.test(address)) {
+    return false
+  }
+  
+  return true
+}
+
+/**
  * Hook para obtener balances de una cuenta en múltiples cadenas
  */
 export function useMultiChainBalances(
@@ -76,9 +105,10 @@ export function useMultiChainBalances(
   }, [])
 
   const fetchAllBalances = useCallback(async () => {
-    if (!address) {
+    if (!address || !isValidSubstrateAddress(address)) {
       setBalances([])
       setIsLoading(false)
+      setError(null)
       return
     }
 
@@ -128,7 +158,7 @@ export function useCurrentChainBalance(address: string | null) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!client || !address || !selectedChain) {
+    if (!client || !address || !selectedChain || !isValidSubstrateAddress(address)) {
       setBalance(null)
       return
     }

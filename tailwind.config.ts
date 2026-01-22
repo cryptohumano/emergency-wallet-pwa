@@ -6,84 +6,14 @@ export default {
     './index.html',
     './src/**/*.{js,ts,jsx,tsx}',
   ],
+  // En Tailwind v4, los colores se definen en @theme inline en el CSS
+  // Solo mantenemos la configuración básica aquí
   theme: {
     extend: {
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
-      },
-      colors: {
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
-        card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
-        },
-        popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))',
-        },
-        primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
-        },
-        secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
-        },
-        muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
-        },
-        accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
-        },
-        destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
-        },
-        success: {
-          DEFAULT: 'hsl(var(--success))',
-          foreground: 'hsl(var(--success-foreground))',
-        },
-        warning: {
-          DEFAULT: 'hsl(var(--warning))',
-          foreground: 'hsl(var(--warning-foreground))',
-        },
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-        chart: {
-          '1': 'hsl(var(--chart-1))',
-          '2': 'hsl(var(--chart-2))',
-          '3': 'hsl(var(--chart-3))',
-          '4': 'hsl(var(--chart-4))',
-          '5': 'hsl(var(--chart-5))',
-        },
-        // Colores semánticos de emergencias
-        emergency: {
-          critical: 'hsl(var(--emergency-critical))',
-          'critical-bg': 'hsl(var(--emergency-critical-bg))',
-          high: 'hsl(var(--emergency-high))',
-          'high-bg': 'hsl(var(--emergency-high-bg))',
-          medium: 'hsl(var(--emergency-medium))',
-          'medium-bg': 'hsl(var(--emergency-medium-bg))',
-          low: 'hsl(var(--emergency-low))',
-          'low-bg': 'hsl(var(--emergency-low-bg))',
-        },
-        // Estados del sistema
-        status: {
-          connected: 'hsl(var(--status-connected))',
-          'connected-bg': 'hsl(var(--status-connected-bg))',
-          disconnected: 'hsl(var(--status-disconnected))',
-          'disconnected-bg': 'hsl(var(--status-disconnected-bg))',
-          connecting: 'hsl(var(--status-connecting))',
-          'connecting-bg': 'hsl(var(--status-connecting-bg))',
-          syncing: 'hsl(var(--status-syncing))',
-          'syncing-bg': 'hsl(var(--status-syncing-bg))',
-        },
       },
     },
   },

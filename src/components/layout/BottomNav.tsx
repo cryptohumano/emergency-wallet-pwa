@@ -17,6 +17,9 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { ActiveAccountSwitcher } from '@/components/ActiveAccountSwitcher'
+import { ThemeToggle } from '@/components/ThemeToggle'
+import { BalanceDisplay } from '@/components/BalanceDisplay'
+import { useRadioMonitor } from '@/contexts/RadioMonitorContext'
 
 const navigation = [
   { name: 'Inicio', href: '/', icon: Home, description: 'Dashboard de emergencias' },
@@ -29,6 +32,7 @@ export function BottomNav() {
   const location = useLocation()
   const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
+  const { isExpanded } = useRadioMonitor()
 
   const handleNavigation = (href: string) => {
     navigate(href)
@@ -37,9 +41,12 @@ export function BottomNav() {
 
   return (
     <>
-      {/* FAB Button - Posicionado para fácil acceso con el pulgar */}
+      {/* FAB Button - Posicionado a la derecha (navegación) */}
       <div
-        className="fixed bottom-4 right-4 md:hidden z-[100] pointer-events-auto"
+        className={cn(
+          "fixed bottom-4 right-4 md:hidden z-[100] pointer-events-auto fab-navigation fab-dim",
+          isExpanded && "fab-dim-active"
+        )}
         style={{
           bottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))',
           right: 'max(1rem, env(safe-area-inset-right, 1rem))',
@@ -49,7 +56,7 @@ export function BottomNav() {
           <SheetTrigger asChild>
             <Button
               size="lg"
-              className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-primary text-primary-foreground hover:bg-primary/90"
+              className="h-14 w-14 rounded-full shadow-xl hover:shadow-2xl transition-all duration-200 bg-primary text-primary-foreground hover:bg-primary/90 border-2 border-primary/20"
               aria-label="Abrir menú de navegación"
             >
               {isOpen ? (
@@ -60,9 +67,10 @@ export function BottomNav() {
             </Button>
           </SheetTrigger>
           <SheetContent
-            side="bottom"
-            className="h-[70vh] rounded-t-2xl overflow-y-auto"
+            side="bottom-above-fab"
+            className="h-[70vh] rounded-t-2xl overflow-y-auto border-t shadow-2xl sheet-solid-bg"
             style={{
+              bottom: 'calc(max(1rem, env(safe-area-inset-bottom, 1rem)) + 5rem)', // Encima de los FABs (h-14 = 3.5rem + 1.5rem de espacio)
               paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))',
             }}
           >
@@ -70,10 +78,25 @@ export function BottomNav() {
               <SheetTitle>Navegación</SheetTitle>
               <SheetDescription>Selecciona una opción para navegar</SheetDescription>
             </SheetHeader>
+            {/* Balance - Solo en móvil */}
+            <div className="mt-4 mb-4">
+              <div className="text-sm font-medium mb-2 px-1">Balance</div>
+              <div className="p-2 bg-muted rounded-lg">
+                <BalanceDisplay showIcon={true} />
+              </div>
+            </div>
             {/* Selector de cuenta activa - Solo en móvil */}
             <div className="mt-4 mb-4">
               <div className="text-sm font-medium mb-2 px-1">Cuenta activa</div>
               <ActiveAccountSwitcher />
+            </div>
+            {/* Toggle de tema */}
+            <div className="mt-4 mb-4">
+              <div className="text-sm font-medium mb-2 px-1">Tema</div>
+              <div className="flex items-center justify-between p-2 bg-muted rounded-lg">
+                <span className="text-sm text-muted-foreground">Aparencia</span>
+                <ThemeToggle />
+              </div>
             </div>
             <div className="mt-6 space-y-2 pb-4">
               {navigation.map((item) => {

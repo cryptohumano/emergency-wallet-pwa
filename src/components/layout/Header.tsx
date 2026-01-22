@@ -7,7 +7,9 @@ import { Button } from '@/components/ui/button'
 import { LogOut, Activity } from 'lucide-react'
 import { NetworkSwitcher } from '@/components/NetworkSwitcher'
 import { ActiveAccountSwitcher } from '@/components/ActiveAccountSwitcher'
-import { useContext } from 'react'
+import { BalanceDisplay } from '@/components/BalanceDisplay'
+import { ThemeToggle } from '@/components/ThemeToggle'
+import { useContext, useState } from 'react'
 import { NetworkContext } from '@/contexts/NetworkContext'
 import { KeyringContext } from '@/contexts/KeyringContext'
 
@@ -40,6 +42,7 @@ function LogoutButton() {
 
 export function Header() {
   const context = useContext(NetworkContext)
+  const [logoError, setLogoError] = useState(false)
 
   if (!context) {
     return (
@@ -47,15 +50,27 @@ export function Header() {
         <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-4 max-w-full overflow-hidden">
           <div className="flex items-center justify-between gap-2 min-w-0">
             <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
-              <h1 className="text-lg sm:text-xl font-bold truncate flex items-center gap-2">
-                <Activity className="h-5 w-5" />
-                Emergency Wallet
-              </h1>
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {!logoError ? (
+                    <img 
+                      src="/web-app-manifest-192x192.png" 
+                      alt="Emergency Wallet" 
+                      className="w-full h-full object-cover"
+                      onError={() => setLogoError(true)}
+                    />
+                  ) : (
+                    <Activity className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                  )}
+                </div>
+              </div>
             </div>
             <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-              <div className="hidden sm:block">
+              <div className="hidden sm:flex items-center gap-2">
+                <BalanceDisplay />
                 <ActiveAccountSwitcher />
               </div>
+              <ThemeToggle className="hidden sm:flex" />
               <LogoutButton />
             </div>
           </div>
@@ -71,10 +86,20 @@ export function Header() {
       <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-4 max-w-full overflow-hidden">
         <div className="flex items-center justify-between gap-2 min-w-0">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
-            <h1 className="text-lg sm:text-xl font-bold truncate flex items-center gap-2">
-              <Activity className="h-5 w-5" />
-              Emergency Wallet
-            </h1>
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                {!logoError ? (
+                  <img 
+                    src="/web-app-manifest-192x192.png" 
+                    alt="Emergency Wallet" 
+                    className="w-full h-full object-cover"
+                    onError={() => setLogoError(true)}
+                  />
+                ) : (
+                  <Activity className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                )}
+              </div>
+            </div>
             <div className="hidden sm:block flex-shrink-0">
               <NetworkSwitcher
                 selectedChain={selectedChain}
@@ -84,9 +109,11 @@ export function Header() {
             </div>
           </div>
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            <div className="hidden sm:block">
+            <div className="hidden sm:flex items-center gap-2">
+              <BalanceDisplay />
               <ActiveAccountSwitcher />
             </div>
+            <ThemeToggle className="hidden sm:flex" />
             <LogoutButton />
             <div className="sm:hidden">
               <NetworkSwitcher
