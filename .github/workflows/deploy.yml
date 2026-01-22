@@ -55,17 +55,26 @@ jobs:
           if [ -f dist/index.html ]; then
             echo "✅ dist/index.html exists"
             echo "Checking for base path in HTML:"
-            # Verificar que tenga algún base path (puede ser /aura-pwa/ o el nombre del repo)
-            if grep -q 'href="/' dist/index.html || grep -q 'src="/' dist/index.html; then
-              echo "✅ Base path found in HTML"
+            # Verificar que tenga el base path correcto (debe incluir emergency-wallet-pwa)
+            if grep -q 'emergency-wallet-pwa' dist/index.html; then
+              echo "✅ Base path 'emergency-wallet-pwa' found in HTML"
             else
-              echo "⚠️ Base path NOT found in HTML"
+              echo "⚠️ Base path 'emergency-wallet-pwa' NOT found in HTML"
               echo "HTML content:"
-              head -20 dist/index.html
+              head -30 dist/index.html
               exit 1
             fi
-            echo "First 20 lines of dist/index.html:"
-            head -20 dist/index.html
+            # Verificar que NO tenga referencias a /src/main.tsx (debe estar compilado)
+            if grep -q '/src/main.tsx' dist/index.html; then
+              echo "❌ ERROR: HTML still contains /src/main.tsx reference (should be compiled)"
+              echo "This means the build did not transform the HTML correctly"
+              cat dist/index.html
+              exit 1
+            else
+              echo "✅ No /src/main.tsx reference found (HTML was transformed correctly)"
+            fi
+            echo "First 30 lines of dist/index.html:"
+            head -30 dist/index.html
           else
             echo "❌ dist/index.html not found"
             exit 1
