@@ -10,50 +10,43 @@ interface AuthGuardProps {
 
 /**
  * Componente que protege las rutas y muestra onboarding o unlock según sea necesario
+ * OPTIMIZACIÓN LCP: Renderiza Unlock inmediatamente como placeholder mientras verifica estado
+ * Esto permite que el CardTitle (elemento LCP) se renderice más rápido
  */
 export function AuthGuard({ children }: AuthGuardProps) {
   const { isReady, isUnlocked, hasStoredAccounts } = useKeyringContext()
   const location = useLocation()
 
-  // Esperar a que el keyring esté listo - pero mostrar contenido inmediatamente para mejor LCP
-  if (!isReady) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <div>
-            <p className="text-sm font-medium text-foreground">Inicializando wallet...</p>
-            <p className="text-xs text-muted-foreground mt-1">Por favor espera</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Si no hay cuentas almacenadas, mostrar onboarding por defecto
-  // pero permitir acceso a la ruta de importación de cuentas
-  if (!hasStoredAccounts) {
+  // OPTIMIZACIÓN LCP: isReady ahora es true inmediatamente, así que siempre podemos renderizar
+  // Si hasStoredAccounts aún no se ha verificado, mostrar Unlock como placeholder
+  // Esto permite que el CardTitle se renderice inmediatamente para mejor LCP
+  
+  // Si no hay cuentas almacenadas, mostrar onboarding
+  if (hasStoredAccounts === false) {
     const currentPath = location.pathname
     
     // Permitir acceso solo a /accounts/import durante el onboarding
-    // Settings es una ruta protegida y no debe ser accesible sin cuentas
     const isImportRoute = currentPath === '/accounts/import' || currentPath.startsWith('/accounts/import?')
     
-    // Si estamos en la ruta de importación, permitir acceso
     if (isImportRoute) {
       return <>{children}</>
     }
     
-    // Para todas las demás rutas (incluyendo /, /accounts, /settings, etc.), mostrar onboarding
     return <Onboarding />
   }
 
   // Si hay cuentas pero no está desbloqueado, mostrar unlock
-  if (!isUnlocked) {
+  if (hasStoredAccounts === true && !isUnlocked) {
     return <Unlock />
   }
 
   // Si está desbloqueado, mostrar el contenido protegido
-  return <>{children}</>
-}
+  if (hasStoredAccounts === true && isUnlocked) {
+    return <>{children}</>
+  }
 
+  // OPTIMIZACIÓN LCP: Mientras se verifica hasStoredAccounts (undefined),
+  // mostrar Unlock como placeholder para que el CardTitle se renderice inmediatamente
+  // Esto mejora el LCP porque el elemento crítico se muestra sin esperar verificaciones
+  return <Unlock />
+}

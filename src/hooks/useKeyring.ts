@@ -35,8 +35,9 @@ export function useKeyring() {
   const [isReady, setIsReady] = useState(false)
   const [accounts, setAccounts] = useState<KeyringAccount[]>([])
   const [isUnlocked, setIsUnlocked] = useState(false)
-  const [hasStoredAccounts, setHasStoredAccounts] = useState(false)
-  const [hasWebAuthnCredentials, setHasWebAuthnCredentials] = useState(false)
+  // OPTIMIZACIÓN LCP: Inicializar como undefined para detectar cuando aún no se ha verificado
+  const [hasStoredAccounts, setHasStoredAccounts] = useState<boolean | undefined>(undefined)
+  const [hasWebAuthnCredentials, setHasWebAuthnCredentials] = useState<boolean | undefined>(undefined)
 
   // Función para verificar y actualizar el estado de credenciales WebAuthn
   const checkWebAuthnCredentials = useCallback(async () => {
@@ -71,8 +72,17 @@ export function useKeyring() {
   useEffect(() => {
     let isMounted = true // Flag para evitar actualizaciones después de desmontar
     
+    // OPTIMIZACIÓN LCP: Verificar cuentas almacenadas inmediatamente (sin esperar cryptoWaitReady)
+    // Esto permite que AuthGuard tome decisiones rápidamente
+    checkStoredAccounts().catch(console.error)
+    checkWebAuthnCredentials().catch(console.error)
+    
+    // OPTIMIZACIÓN LCP: Marcar como ready inmediatamente para permitir renderizado
+    // La inicialización completa del keyring se hará en background
+    setIsReady(true)
+    
     const initKeyring = async () => {
-      console.log('[Keyring] Iniciando inicialización...')
+      console.log('[Keyring] Iniciando inicialización en background...')
       try {
         console.log('[Keyring] Esperando cryptoWaitReady()...')
         await cryptoWaitReady()
@@ -86,24 +96,22 @@ export function useKeyring() {
         setKeyring(kr)
         console.log('[Keyring] Keyring creado exitosamente')
         
-        // Verificar si hay cuentas almacenadas
+        // Verificar nuevamente (por si acaso cambió algo)
         await checkStoredAccounts()
-        
-        // Verificar si hay credenciales WebAuthn
         await checkWebAuthnCredentials()
         
-        if (!isMounted) return
-        setIsReady(true)
-        console.log('[Keyring] ✅ Inicialización completada')
+        console.log('[Keyring] ✅ Inicialización completada en background')
       } catch (error) {
         console.error('[Keyring] ❌ Error al inicializar keyring:', error)
-        if (isMounted) {
-          setIsReady(true) // Marcar como listo incluso si hay error para mostrar el componente
-        }
+        // No cambiar isReady aquí, ya está en true para permitir renderizado
       }
     }
 
-    initKeyring()
+    // Inicializar en background sin bloquear renderizado
+    // Usar setTimeout para dar prioridad al renderizado inicial
+    setTimeout(() => {
+      initKeyring()
+    }, 0)
     
     return () => {
       isMounted = false // Limpiar flag al desmontar

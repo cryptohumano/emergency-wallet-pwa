@@ -1,19 +1,26 @@
-// Polyfills para Node.js modules en el navegador
-// Importar buffer y hacerlo disponible globalmente para que el código del cliente pueda acceder
-import { Buffer } from 'buffer'
-
-// Hacer Buffer disponible globalmente para compatibilidad con código que espera buffer.Buffer
-if (typeof window !== 'undefined') {
-  window.Buffer = Buffer
-  // También disponible como buffer.Buffer para compatibilidad
-  ;(window as any).buffer = { Buffer }
+// OPTIMIZACIÓN LCP: Polyfills mínimos síncronos, carga completa asíncrona
+// Crear un Buffer stub inmediatamente para evitar errores
+if (typeof window !== 'undefined' && !window.Buffer) {
+  // Stub temporal hasta que se cargue el Buffer real
+  ;(window as any).Buffer = class BufferStub {
+    static from() { return new Uint8Array() }
+    static alloc() { return new Uint8Array() }
+    static isBuffer() { return false }
+  }
+  ;(window as any).buffer = { Buffer: (window as any).Buffer }
 }
 
-if (typeof globalThis !== 'undefined') {
-  globalThis.Buffer = Buffer
-  // También disponible como buffer.Buffer para compatibilidad
-  ;(globalThis as any).buffer = { Buffer }
-}
+// Cargar Buffer real de forma asíncrona después del renderizado
+import('buffer').then(({ Buffer }) => {
+  if (typeof window !== 'undefined') {
+    window.Buffer = Buffer
+    ;(window as any).buffer = { Buffer }
+  }
+  if (typeof globalThis !== 'undefined') {
+    globalThis.Buffer = Buffer
+    ;(globalThis as any).buffer = { Buffer }
+  }
+}).catch(console.error)
 
 // Polyfill para crypto.randomUUID si no está disponible
 if (typeof crypto !== 'undefined' && !crypto.randomUUID) {
@@ -125,19 +132,37 @@ if (typeof window !== 'undefined') {
   console.log('[GlobalErrorHandler] ✅ Manejador global de errores configurado')
 }
 
-import { StrictMode } from 'react'
+import { StrictMode, lazy, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'
 import './index.css'
 import { router } from './router'
 import { KeyringProvider } from './contexts/KeyringContext'
-import { NetworkProvider } from './contexts/NetworkContext'
 import { ActiveAccountProvider } from './contexts/ActiveAccountContext'
-import { RemarkListenerProvider } from './contexts/RemarkListenerContext'
-import { RadioMonitorProvider } from './contexts/RadioMonitorContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { I18nProvider } from './contexts/I18nContext'
 import { Toaster } from '@/components/ui/sonner'
+
+// OPTIMIZACIÓN LCP: Lazy load de providers pesados que hacen conexiones WebSocket
+// Estos providers se cargan después de que el contenido crítico se haya renderizado
+const NetworkProvider = lazy(() => import('@/contexts/NetworkContext').then(m => ({ default: m.NetworkProvider })))
+const RadioMonitorProvider = lazy(() => import('@/contexts/RadioMonitorContext').then(m => ({ default: m.RadioMonitorProvider })))
+const RemarkListenerProvider = lazy(() => import('@/contexts/RemarkListenerContext').then(m => ({ default: m.RemarkListenerProvider })))
+
+// Componente interno que envuelve los providers lazy de conexiones
+function LazyConnectionProviders({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={null}>
+      <NetworkProvider>
+        <RadioMonitorProvider>
+          <RemarkListenerProvider>
+            {children}
+          </RemarkListenerProvider>
+        </RadioMonitorProvider>
+      </NetworkProvider>
+    </Suspense>
+  )
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -145,14 +170,10 @@ createRoot(document.getElementById('root')!).render(
       <ThemeProvider>
         <KeyringProvider>
           <ActiveAccountProvider>
-            <NetworkProvider>
-              <RadioMonitorProvider>
-                <RemarkListenerProvider>
-                  <RouterProvider router={router} />
-                  <Toaster />
-                </RemarkListenerProvider>
-              </RadioMonitorProvider>
-            </NetworkProvider>
+            <LazyConnectionProviders>
+              <RouterProvider router={router} />
+              <Toaster />
+            </LazyConnectionProviders>
           </ActiveAccountProvider>
         </KeyringProvider>
       </ThemeProvider>

@@ -68,8 +68,9 @@ const getBase = () => {
   return '/emergency-wallet-pwa/'
 }
 
-// Calcular el base path dinámicamente (se recalcula cada vez que se accede)
-// Esto asegura que las variables de entorno estén disponibles durante el build
+// Calcular el base path dinámicamente
+// IMPORTANTE: Esto se ejecuta cuando se carga el módulo, así que las variables de entorno
+// deben estar disponibles en ese momento (lo cual es el caso en GitHub Actions)
 const basePath = getBase()
 
 // Log para debugging (siempre, para ver qué está pasando)
@@ -79,10 +80,14 @@ console.log('[Vite Config] NODE_ENV:', process.env.NODE_ENV)
 console.log('[Vite Config] VITE_BASE_URL:', process.env.VITE_BASE_URL)
 
 // Verificar que el base path sea correcto
-if (process.env.NODE_ENV === 'production' && (!basePath || basePath === '/')) {
-  console.warn('[Vite Config] ⚠️ Base path es "/". Si estás desplegando en GitHub Pages, esto podría causar problemas.')
-  console.warn('[Vite Config] GITHUB_REPOSITORY debería estar configurado en el workflow de GitHub Actions.')
-  console.warn('[Vite Config] Usando fallback: /emergency-wallet-pwa/')
+if (process.env.NODE_ENV === 'production') {
+  if (!basePath || basePath === '/') {
+    console.warn('[Vite Config] ⚠️ Base path es "/". Si estás desplegando en GitHub Pages, esto podría causar problemas.')
+    console.warn('[Vite Config] GITHUB_REPOSITORY debería estar configurado en el workflow de GitHub Actions.')
+    console.warn('[Vite Config] Usando fallback: /emergency-wallet-pwa/')
+  } else {
+    console.log('[Vite Config] ✅ Base path configurado correctamente para GitHub Pages:', basePath)
+  }
 }
 
 // Plugin para transformar rutas en index.html durante el build
@@ -95,16 +100,32 @@ const transformHtmlPlugin = () => {
     transformIndexHtml(html: string) {
       // En producción, reemplazar rutas absolutas con base path
       if (process.env.NODE_ENV === 'production' && basePath !== '/') {
-        // Reemplazar rutas absolutas de favicons y otros assets estáticos
-        // Nota: Vite ya debería haber transformado src="/src/main.tsx" a los archivos compilados
-        // Solo necesitamos ajustar las rutas de assets estáticos que Vite no transforma
         let transformed = html
-          .replace(/href="\/(favicon|apple-touch-icon)/g, `href="${basePath}$1`)
         
         // Verificar que Vite haya transformado el script (debug)
         if (transformed.includes('/src/main.tsx')) {
           console.error('[transformHtmlPlugin] ❌ ERROR: HTML todavía contiene /src/main.tsx después de la transformación de Vite')
           console.error('[transformHtmlPlugin] Esto significa que Vite no transformó el script correctamente')
+          console.error('[transformHtmlPlugin] Base path configurado:', basePath)
+          console.error('[transformHtmlPlugin] HTML actual:', transformed.substring(0, 500))
+          // Esto no debería pasar, pero si pasa, es un error crítico
+          throw new Error('Vite no transformó /src/main.tsx correctamente. Verifica la configuración del base path.')
+        }
+        
+        // Reemplazar rutas absolutas de favicons y otros assets estáticos
+        // Nota: Vite ya debería haber transformado src="/src/main.tsx" a los archivos compilados
+        // Solo necesitamos ajustar las rutas de assets estáticos que Vite no transforma
+        transformed = transformed
+          .replace(/href="\/(favicon|apple-touch-icon)/g, `href="${basePath}$1`)
+        
+        // Asegurar que todas las rutas de assets compilados tengan el base path
+        // Vite debería hacer esto automáticamente, pero por si acaso:
+        if (basePath !== '/') {
+          // Reemplazar rutas de scripts y estilos que empiecen con /assets/ pero no tengan el base path
+          transformed = transformed.replace(
+            /(src|href)="\/assets\//g, 
+            `$1="${basePath}assets/`
+          )
         }
         
         return transformed
@@ -116,6 +137,9 @@ const transformHtmlPlugin = () => {
 
 // https://vite.dev/config/
 export default defineConfig({
+  // IMPORTANTE: El base path debe estar configurado aquí para que Vite transforme
+  // correctamente todas las rutas en el HTML, incluyendo /src/main.tsx
+  // Vite transformará automáticamente /src/main.tsx a /base-path/assets/main-[hash].js
   base: basePath,
   publicDir: 'public', // Asegurar que la carpeta public se copie correctamente
   server: {
@@ -128,8 +152,7 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    transformHtmlPlugin(),
-      VitePWA({
+    VitePWA({
       registerType: 'autoUpdate',
       includeAssets: [
         'favicon.ico', 
@@ -146,12 +169,45 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
         navigateFallback: basePath === '/' ? '/index.html' : basePath + 'index.html',
-        navigateFallbackDenylist: [/^\/_/, /\/[^/?]+\.[^/]+$/],
+        navigateFallbackDenylist: [
+          /^\/_/, 
+          /\/[^/?]+\.[^/]+$/,
+          // Excluir rutas de desarrollo de Vite
+          /^\/@vite\/client/,
+          /^\/@react-refresh/,
+          /^\/@vite-plugin-pwa/,
+          /^\/node_modules\/\.vite/,
+          /^\/src\/.*\.(tsx?|jsx?)$/,
+        ],
         // Excluir servicios de mapas del procesamiento de Workbox completamente
         // Esto previene que Workbox intente procesar estas URLs
         navigateFallbackAllowlist: undefined,
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
+        // En desarrollo, no intentar precachear recursos que no existen
+        // Esto reduce los warnings de "Precaching did not find a match"
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
+          {
+            // Ignorar rutas de desarrollo de Vite - NetworkOnly (no cachear)
+            urlPattern: ({ url }: { url: URL }) => {
+              const isDevRoute = 
+                url.pathname.startsWith('/@vite/') ||
+                url.pathname.startsWith('/@react-refresh') ||
+                url.pathname.startsWith('/@vite-plugin-pwa/') ||
+                url.pathname.startsWith('/node_modules/.vite/') ||
+                (url.pathname.startsWith('/src/') && /\.(tsx?|jsx?)$/.test(url.pathname))
+              return isDevRoute
+            },
+            handler: 'NetworkOnly',
+            options: {
+              // No cachear rutas de desarrollo
+              cacheableResponse: {
+                statuses: [0, 200] // Aceptar cualquier respuesta pero no cachear
+              }
+            }
+          },
           {
             // Regla específica para staticmap - NO interceptar estas URLs
             // Workbox no debe procesar estas URLs en absoluto para evitar errores
@@ -259,10 +315,17 @@ export default defineConfig({
       devOptions: {
         enabled: true,
         type: 'module',
+        // Nota: En desarrollo, Workbox puede mostrar warnings sobre rutas de Vite
+        // (como /@vite/client, /src/main.tsx, etc.) que no existen en producción.
+        // Estos warnings son normales y no afectan el funcionamiento.
+        // Las rutas de desarrollo están configuradas para ser ignoradas en navigateFallbackDenylist.
       },
       // injectRegister ya está definido arriba (línea 115), no duplicar
       injectManifest: false
-    })
+    }),
+    // IMPORTANTE: Este plugin debe ejecutarse al final para verificar que Vite
+    // haya transformado correctamente el HTML, especialmente /src/main.tsx
+    transformHtmlPlugin()
   ],
   resolve: {
     alias: {

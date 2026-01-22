@@ -25,6 +25,7 @@ export function useRemarkListener() {
   const [lastProcessedBlock, setLastProcessedBlock] = useState<number | null>(null)
   const [blocksProcessedCount, setBlocksProcessedCount] = useState(0)
   const [isManuallyEnabled, setIsManuallyEnabled] = useState(true) // Control manual del listener
+  const [shouldStartListener, setShouldStartListener] = useState(false) // OPTIMIZACIÓN LCP: Retrasar inicio
   const listenerRef = useRef<RemarkListener | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const keepAliveIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -32,6 +33,15 @@ export function useRemarkListener() {
   const isVisibleRef = useRef(true)
   const startListenerRef = useRef<(() => Promise<boolean>) | null>(null)
   const isStartingRef = useRef(false) // Prevenir múltiples inicios simultáneos
+  
+  // OPTIMIZACIÓN LCP: Retrasar inicio del listener hasta después del renderizado inicial
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShouldStartListener(true)
+    }, 500) // Esperar 500ms después del renderizado inicial
+    
+    return () => clearTimeout(timer)
+  }, [])
 
   // Callback cuando se recibe una emergencia - SIEMPRE definido
   const handleEmergencyReceived = useCallback(async (emergency: Emergency) => {
@@ -255,6 +265,11 @@ export function useRemarkListener() {
   // IMPORTANTE: Este efecto NO debe detener el listener cuando cambia la ruta
   // Solo debe iniciar/detener cuando cambian las dependencias críticas (chain, account, enabled)
   useEffect(() => {
+    // OPTIMIZACIÓN LCP: No iniciar hasta que se permita (después del renderizado inicial)
+    if (!shouldStartListener) {
+      return
+    }
+    
     // Si está deshabilitado manualmente, detener y salir
     if (!isManuallyEnabled) {
       if (listenerRef.current) {
@@ -296,7 +311,7 @@ export function useRemarkListener() {
       // NO limpiar aquí - el listener debe persistir entre cambios de ruta
       // Solo se detendrá cuando cambien las dependencias críticas arriba
     }
-  }, [selectedChain?.endpoint, selectedChain?.name, activeAccount, isManuallyEnabled]) // Solo dependencias críticas, NO startListener
+  }, [shouldStartListener, selectedChain?.endpoint, selectedChain?.name, activeAccount, isManuallyEnabled, startListener]) // Incluir shouldStartListener y startListener
 
   // El número de bloque se actualiza automáticamente desde onBlockProcessed
   // No necesitamos una suscripción separada

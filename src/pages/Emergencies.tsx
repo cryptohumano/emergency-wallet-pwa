@@ -11,8 +11,9 @@ import { useEmergency } from '@/hooks/useEmergency'
 import { Link } from 'react-router-dom'
 import type { Emergency } from '@/types/emergencies'
 import { formatDistanceToNow } from 'date-fns'
-import { es } from 'date-fns/locale/es'
+import { es, enUS } from 'date-fns/locale'
 import { AlertTriangle, MapPin, Clock } from 'lucide-react'
+import { useI18n } from '@/contexts/I18nContext'
 
 export default function Emergencies() {
   const { emergencies } = useEmergency()
@@ -91,6 +92,7 @@ export default function Emergencies() {
 }
 
 function EmergencyCard({ emergency }: { emergency: Emergency }) {
+  const { t, language } = useI18n()
   const isCritical = emergency.severity === 'critical'
   const isHigh = emergency.severity === 'high'
   
