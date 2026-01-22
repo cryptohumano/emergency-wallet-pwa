@@ -136,24 +136,27 @@ import { ActiveAccountProvider } from './contexts/ActiveAccountContext'
 import { RemarkListenerProvider } from './contexts/RemarkListenerContext'
 import { RadioMonitorProvider } from './contexts/RadioMonitorContext'
 import { ThemeProvider } from './contexts/ThemeContext'
+import { I18nProvider } from './contexts/I18nContext'
 import { Toaster } from '@/components/ui/sonner'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ThemeProvider>
-      <KeyringProvider>
-        <ActiveAccountProvider>
-          <NetworkProvider>
-            <RadioMonitorProvider>
-              <RemarkListenerProvider>
-                <RouterProvider router={router} />
-                <Toaster />
-              </RemarkListenerProvider>
-            </RadioMonitorProvider>
-          </NetworkProvider>
-        </ActiveAccountProvider>
-      </KeyringProvider>
-    </ThemeProvider>
+    <I18nProvider>
+      <ThemeProvider>
+        <KeyringProvider>
+          <ActiveAccountProvider>
+            <NetworkProvider>
+              <RadioMonitorProvider>
+                <RemarkListenerProvider>
+                  <RouterProvider router={router} />
+                  <Toaster />
+                </RemarkListenerProvider>
+              </RadioMonitorProvider>
+            </NetworkProvider>
+          </ActiveAccountProvider>
+        </KeyringProvider>
+      </ThemeProvider>
+    </I18nProvider>
   </StrictMode>,
 )
 

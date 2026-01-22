@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useKeyringContext } from '@/contexts/KeyringContext'
+import { useI18n } from '@/contexts/I18nContext'
 import { ArrowLeft, Copy, Check } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
@@ -14,6 +15,7 @@ type CryptoType = 'sr25519' | 'ed25519' | 'ecdsa'
 
 export default function CreateAccount() {
   const navigate = useNavigate()
+  const { t } = useI18n()
   const { generateMnemonic, addFromMnemonic, isUnlocked } = useKeyringContext()
   const [step, setStep] = useState<'form' | 'backup' | 'password'>('form')
   const [name, setName] = useState('')
@@ -51,22 +53,22 @@ export default function CreateAccount() {
     setError('')
 
     if (!name.trim()) {
-      setError('El nombre de la cuenta es requerido')
+      setError(t('accounts.nameRequired'))
       return
     }
 
     if (!password) {
-      setError('La contraseña es requerida para proteger tu cuenta')
+      setError(t('accounts.passwordRequired'))
       return
     }
 
     if (password.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres')
+      setError(t('accounts.passwordMin'))
       return
     }
 
     if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden')
+      setError(t('accounts.passwordMismatch'))
       return
     }
 
@@ -76,10 +78,10 @@ export default function CreateAccount() {
       if (account) {
         navigate('/accounts')
       } else {
-        setError('Error al crear la cuenta. Por favor intenta de nuevo.')
+        setError(t('accounts.createError'))
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al crear la cuenta')
+      setError(err instanceof Error ? err.message : t('accounts.createError'))
     } finally {
       setLoading(false)
     }
@@ -95,28 +97,28 @@ export default function CreateAccount() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Crear Nueva Cuenta</h1>
+            <h1 className="text-3xl font-bold">{t('accounts.createNew')}</h1>
             <p className="text-muted-foreground mt-1">
-              Genera una nueva cuenta con una frase de recuperación
+              {t('accounts.generateDescription')}
             </p>
           </div>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Configuración de la Cuenta</CardTitle>
+            <CardTitle>{t('accounts.accountConfig')}</CardTitle>
             <CardDescription>
-              Configura los detalles básicos de tu nueva cuenta
+              {t('accounts.configDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="name">Nombre de la Cuenta</Label>
+              <Label htmlFor="name">{t('accounts.accountName')}</Label>
               <Input
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Mi Cuenta"
+                placeholder={t('accounts.myAccount')}
               />
             </div>
 
@@ -161,19 +163,18 @@ export default function CreateAccount() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Guarda tu Frase de Recuperación</h1>
+            <h1 className="text-3xl font-bold">{t('accounts.saveRecovery')}</h1>
             <p className="text-muted-foreground mt-1">
-              Esta frase es la única forma de recuperar tu cuenta
+              {t('accounts.saveRecoveryDesc')}
             </p>
           </div>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Frase de Recuperación (Mnemonic)</CardTitle>
+            <CardTitle>{t('accounts.recoveryMnemonic')}</CardTitle>
             <CardDescription>
-              Guarda estas 12 palabras en un lugar seguro. Sin esta frase, no podrás
-              recuperar tu cuenta si pierdes acceso a este dispositivo.
+              {t('accounts.recoveryMnemonicDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -209,7 +210,7 @@ export default function CreateAccount() {
               ) : (
                 <div className="text-center py-8">
                   <Button onClick={() => setShowMnemonic(true)} variant="outline" size="lg">
-                    Mostrar Frase de Recuperación
+                    {t('onboarding.showPhrase')}
                   </Button>
                 </div>
               )}
@@ -218,9 +219,7 @@ export default function CreateAccount() {
             {showMnemonic && (
               <Alert>
                 <AlertDescription>
-                  <strong>⚠️ Advertencia:</strong> No compartas esta frase con nadie.
-                  Cualquiera que tenga acceso a estas palabras puede controlar tu cuenta.
-                  Guárdala en un lugar seguro y nunca la compartas.
+                  <strong>⚠️ {t('common.warning')}:</strong> {t('onboarding.neverShare')}
                 </AlertDescription>
               </Alert>
             )}
@@ -231,14 +230,14 @@ export default function CreateAccount() {
                 variant="outline"
                 className="flex-1"
               >
-                Atrás
+                {t('common.back')}
               </Button>
               <Button
                 onClick={handleBackupConfirmed}
                 className="flex-1"
                 disabled={!showMnemonic}
               >
-                He Guardado la Frase
+                {t('onboarding.savedPhrase')}
               </Button>
             </div>
           </CardContent>
@@ -255,40 +254,40 @@ export default function CreateAccount() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Configurar Contraseña</h1>
+            <h1 className="text-3xl font-bold">{t('onboarding.passwordSetup')}</h1>
             <p className="text-muted-foreground mt-1">
-              Protege tu cuenta con una contraseña segura
+              {t('onboarding.passwordDesc')}
             </p>
           </div>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Contraseña de Seguridad</CardTitle>
+            <CardTitle>{t('accounts.securityPassword')}</CardTitle>
             <CardDescription>
-              Esta contraseña se usará para encriptar y proteger tu cuenta en este dispositivo
+              {t('accounts.securityPasswordDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
+              <Label htmlFor="password">{t('onboarding.password')}</Label>
               <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Mínimo 8 caracteres"
+                placeholder={t('onboarding.minPassword')}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
+              <Label htmlFor="confirmPassword">{t('onboarding.confirmPassword')}</Label>
               <Input
                 id="confirmPassword"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Repite la contraseña"
+                placeholder={t('accounts.repeatPassword')}
               />
             </div>
 
@@ -304,14 +303,14 @@ export default function CreateAccount() {
                 variant="outline"
                 className="flex-1"
               >
-                Atrás
+                {t('common.back')}
               </Button>
               <Button
                 onClick={handleCreate}
                 className="flex-1"
                 disabled={loading || !password || !confirmPassword}
               >
-                {loading ? 'Creando...' : 'Crear Cuenta'}
+                {loading ? t('accounts.creating') : t('accounts.create')}
               </Button>
             </div>
           </CardContent>

@@ -12,9 +12,11 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { useContext, useState } from 'react'
 import { NetworkContext } from '@/contexts/NetworkContext'
 import { KeyringContext } from '@/contexts/KeyringContext'
+import { useI18n } from '@/contexts/I18nContext'
 
 // Componente separado para el botón de logout
 function LogoutButton() {
+  const { t } = useI18n()
   const keyringContext = useContext(KeyringContext)
 
   if (!keyringContext) {
@@ -33,7 +35,7 @@ function LogoutButton() {
       size="icon"
       className="h-8 w-8 sm:h-10 sm:w-10"
       onClick={lock}
-      title="Cerrar sesión"
+      title={t('common.logout')}
     >
       <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
     </Button>

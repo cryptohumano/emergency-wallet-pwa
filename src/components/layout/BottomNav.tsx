@@ -20,19 +20,21 @@ import { ActiveAccountSwitcher } from '@/components/ActiveAccountSwitcher'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { BalanceDisplay } from '@/components/BalanceDisplay'
 import { useRadioMonitor } from '@/contexts/RadioMonitorContext'
-
-const navigation = [
-  { name: 'Inicio', href: '/', icon: Home, description: 'Dashboard de emergencias' },
-  { name: 'Emergencias', href: '/emergencies', icon: AlertTriangle, description: 'Ver todas las emergencias' },
-  { name: 'Cuentas', href: '/accounts', icon: Wallet, description: 'Gestionar tus cuentas' },
-  { name: 'Configuración', href: '/settings', icon: Settings, description: 'Ajustes y preferencias' },
-]
+import { useI18n } from '@/contexts/I18nContext'
 
 export function BottomNav() {
   const location = useLocation()
   const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
   const { isExpanded } = useRadioMonitor()
+  const { t } = useI18n()
+  
+  const navigation = [
+    { name: t('nav.home'), href: '/', icon: Home, description: t('home.title') },
+    { name: t('nav.emergencies'), href: '/emergencies', icon: AlertTriangle, description: t('emergencies.title') },
+    { name: t('nav.accounts'), href: '/accounts', icon: Wallet, description: t('accounts.title') },
+    { name: t('nav.settings'), href: '/settings', icon: Settings, description: t('settings.title') },
+  ]
 
   const handleNavigation = (href: string) => {
     navigate(href)
@@ -57,7 +59,7 @@ export function BottomNav() {
             <Button
               size="lg"
               className="h-14 w-14 rounded-full shadow-xl hover:shadow-2xl transition-all duration-200 bg-primary text-primary-foreground hover:bg-primary/90 border-2 border-primary/20"
-              aria-label="Abrir menú de navegación"
+              aria-label={t('nav.home')}
             >
               {isOpen ? (
                 <X className="h-6 w-6" />
@@ -75,26 +77,26 @@ export function BottomNav() {
             }}
           >
             <SheetHeader>
-              <SheetTitle>Navegación</SheetTitle>
-              <SheetDescription>Selecciona una opción para navegar</SheetDescription>
+              <SheetTitle>{t('settings.navigation')}</SheetTitle>
+              <SheetDescription>{t('settings.selectOption')}</SheetDescription>
             </SheetHeader>
             {/* Balance - Solo en móvil */}
             <div className="mt-4 mb-4">
-              <div className="text-sm font-medium mb-2 px-1">Balance</div>
+              <div className="text-sm font-medium mb-2 px-1">{t('accounts.balance')}</div>
               <div className="p-2 bg-muted rounded-lg">
                 <BalanceDisplay showIcon={true} />
               </div>
             </div>
             {/* Selector de cuenta activa - Solo en móvil */}
             <div className="mt-4 mb-4">
-              <div className="text-sm font-medium mb-2 px-1">Cuenta activa</div>
+              <div className="text-sm font-medium mb-2 px-1">{t('settings.activeAccount')}</div>
               <ActiveAccountSwitcher />
             </div>
             {/* Toggle de tema */}
             <div className="mt-4 mb-4">
-              <div className="text-sm font-medium mb-2 px-1">Tema</div>
+              <div className="text-sm font-medium mb-2 px-1">{t('settings.theme')}</div>
               <div className="flex items-center justify-between p-2 bg-muted rounded-lg">
-                <span className="text-sm text-muted-foreground">Aparencia</span>
+                <span className="text-sm text-muted-foreground">{t('settings.appearance')}</span>
                 <ThemeToggle />
               </div>
             </div>

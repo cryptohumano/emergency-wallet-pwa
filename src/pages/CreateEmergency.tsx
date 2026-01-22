@@ -21,8 +21,10 @@ import { useEmergency } from '@/hooks/useEmergency'
 import { useGPSTracking } from '@/hooks/useGPSTracking'
 import type { EmergencyType, EmergencySeverity, GPSPoint } from '@/types/emergencies'
 import { AlertTriangle, MapPin, Loader2 } from 'lucide-react'
+import { useI18n } from '@/contexts/I18nContext'
 
 export default function CreateEmergency() {
+  const { t } = useI18n()
   const navigate = useNavigate()
   const [type, setType] = useState<EmergencyType>('medical')
   const [severity, setSeverity] = useState<EmergencySeverity>('high')
@@ -43,7 +45,7 @@ export default function CreateEmergency() {
 
   const handleCreateEmergency = async () => {
     if (!description.trim() && severity !== 'critical') {
-      toast.error('Por favor, proporciona una descripción de la emergencia')
+      toast.error(t('emergencies.provideDescription'))
       return
     }
 
@@ -87,21 +89,21 @@ export default function CreateEmergency() {
         }
       } catch (error) {
         console.error('[CreateEmergency] Error al obtener ubicación:', error)
-        toast.error('No se pudo obtener la ubicación GPS', {
-          description: 'Por favor, asegúrate de que el GPS esté activado',
+        toast.error(t('emergencies.gpsError'), {
+          description: t('emergencies.gpsErrorDesc'),
         })
         return
       }
     }
 
     if (!location) {
-      toast.error('No se pudo obtener la ubicación GPS')
+      toast.error(t('emergencies.gpsError'))
       return
     }
 
     try {
       setSubmitting(true)
-      toast.info('Creando emergencia...')
+      toast.info(t('emergencies.creating'))
 
       const emergency = await createAndSubmitEmergency({
         type,
@@ -111,13 +113,13 @@ export default function CreateEmergency() {
       })
 
       if (emergency) {
-        toast.success('Emergencia creada exitosamente')
+        toast.success(t('emergencies.createdSuccess'))
         navigate(`/emergencies/${emergency.emergencyId}`)
       }
     } catch (error) {
       console.error('[CreateEmergency] Error:', error)
-      toast.error('Error al crear emergencia', {
-        description: error instanceof Error ? error.message : 'Error desconocido',
+      toast.error(t('emergencies.createError'), {
+        description: error instanceof Error ? error.message : t('emergencies.unknownError'),
       })
     } finally {
       setSubmitting(false)
@@ -128,37 +130,37 @@ export default function CreateEmergency() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Crear Emergencia</CardTitle>
+          <CardTitle>{t('emergencies.createTitle')}</CardTitle>
           <CardDescription>
-            Reporta una emergencia que será registrada en blockchain
+            {t('emergencies.createDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Tipo de emergencia */}
           <div className="space-y-2">
-            <Label htmlFor="type">Tipo de Emergencia</Label>
+            <Label htmlFor="type">{t('emergencies.type')}</Label>
             <Select value={type} onValueChange={(v) => setType(v as EmergencyType)}>
               <SelectTrigger id="type">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="medical">Médica</SelectItem>
-                <SelectItem value="rescue">Rescate</SelectItem>
-                <SelectItem value="weather">Clima</SelectItem>
-                <SelectItem value="equipment">Equipo</SelectItem>
-                <SelectItem value="lost">Extraviado</SelectItem>
-                <SelectItem value="injury">Lesión</SelectItem>
-                <SelectItem value="illness">Enfermedad</SelectItem>
-                <SelectItem value="avalanche">Avalancha</SelectItem>
-                <SelectItem value="rockfall">Caída de rocas</SelectItem>
-                <SelectItem value="other">Otra</SelectItem>
+                <SelectItem value="medical">{t('emergencies.types.medical')}</SelectItem>
+                <SelectItem value="rescue">{t('emergencies.types.rescue')}</SelectItem>
+                <SelectItem value="weather">{t('emergencies.types.weather')}</SelectItem>
+                <SelectItem value="equipment">{t('emergencies.types.equipment')}</SelectItem>
+                <SelectItem value="lost">{t('emergencies.types.lost')}</SelectItem>
+                <SelectItem value="injury">{t('emergencies.types.injury')}</SelectItem>
+                <SelectItem value="illness">{t('emergencies.types.illness')}</SelectItem>
+                <SelectItem value="avalanche">{t('emergencies.types.avalanche')}</SelectItem>
+                <SelectItem value="rockfall">{t('emergencies.types.rockfall')}</SelectItem>
+                <SelectItem value="other">{t('emergencies.types.other')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Severidad */}
           <div className="space-y-2">
-            <Label htmlFor="severity">Severidad</Label>
+            <Label htmlFor="severity">{t('emergencies.severity')}</Label>
             <Select
               value={severity}
               onValueChange={(v) => setSeverity(v as EmergencySeverity)}
@@ -167,20 +169,20 @@ export default function CreateEmergency() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="low">Baja</SelectItem>
-                <SelectItem value="medium">Media</SelectItem>
-                <SelectItem value="high">Alta</SelectItem>
-                <SelectItem value="critical">Crítica</SelectItem>
+                <SelectItem value="low">{t('emergencies.severityLabels.low')}</SelectItem>
+                <SelectItem value="medium">{t('emergencies.severityLabels.medium')}</SelectItem>
+                <SelectItem value="high">{t('emergencies.severityLabels.high')}</SelectItem>
+                <SelectItem value="critical">{t('emergencies.severityLabels.critical')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Descripción */}
           <div className="space-y-2">
-            <Label htmlFor="description">Descripción</Label>
+            <Label htmlFor="description">{t('emergencies.description')}</Label>
             <Textarea
               id="description"
-              placeholder="Describe la emergencia..."
+              placeholder={t('emergencies.describePlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
@@ -189,7 +191,7 @@ export default function CreateEmergency() {
 
           {/* Ubicación GPS */}
           <div className="space-y-2">
-            <Label>Ubicación GPS</Label>
+            <Label>{t('emergencies.location')}</Label>
             {gpsLocation ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4" />
@@ -199,7 +201,7 @@ export default function CreateEmergency() {
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Se obtendrá automáticamente al crear la emergencia
+                {t('emergencies.gpsAuto')}
               </p>
             )}
           </div>
@@ -216,12 +218,12 @@ export default function CreateEmergency() {
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creando...
+                  {t('emergencies.creatingLabel')}
                 </>
               ) : (
                 <>
                   <AlertTriangle className="mr-2 h-4 w-4" />
-                  Crear Emergencia
+                  {t('emergencies.create')}
                 </>
               )}
             </Button>
@@ -232,7 +234,7 @@ export default function CreateEmergency() {
               disabled={submitting}
               className="w-full sm:flex-1 min-h-[44px]"
             >
-              Cancelar
+              {t('common.cancel')}
             </Button>
           </div>
         </CardContent>

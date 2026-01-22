@@ -14,7 +14,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Plus, Edit, Trash2, Save, ExternalLink, Key, Globe, Shield } from 'lucide-react'
+import { Plus, Edit, Trash2, Save, ExternalLink, Key, Globe, Shield, Info } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { useI18n } from '@/contexts/I18nContext'
 import { WebAuthnCredentialsManager } from '@/components/WebAuthnCredentialsManager'
 import { DatabaseManager } from '@/components/DatabaseManager'
 import { BackupManager } from '@/components/BackupManager'
@@ -87,6 +89,7 @@ function useApiConfigsStorage() {
 
 export default function Settings() {
   const { configs, addConfig, updateConfig, deleteConfig } = useApiConfigsStorage()
+  const { language, setLanguage, t } = useI18n()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingConfig, setEditingConfig] = useState<ApiConfig | null>(null)
   const [formData, setFormData] = useState({
@@ -168,10 +171,10 @@ export default function Settings() {
 
   const getTypeLabel = (type: ApiConfig['type']) => {
     const labels = {
-      credential: 'Credenciales',
-      medical: 'Registro Médico',
-      attestation: 'Atestación',
-      other: 'Otro',
+      credential: t('settings.apis.typeCredential'),
+      medical: t('settings.apis.typeMedical'),
+      attestation: t('settings.apis.typeAttestation'),
+      other: t('settings.apis.typeOther'),
     }
     return labels[type]
   }
@@ -192,17 +195,17 @@ export default function Settings() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Configuración</h1>
+        <h1 className="text-3xl font-bold">{t('settings.title')}</h1>
         <p className="text-muted-foreground mt-2">
-          Gestiona la configuración de Aura Wallet
+          {t('settings.description')}
         </p>
       </div>
 
       <Tabs defaultValue="apis" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="apis">APIs Externas</TabsTrigger>
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="security">Seguridad</TabsTrigger>
+          <TabsTrigger value="apis">{t('settings.apis')}</TabsTrigger>
+          <TabsTrigger value="general">{t('settings.general')}</TabsTrigger>
+          <TabsTrigger value="security">{t('settings.security')}</TabsTrigger>
         </TabsList>
 
         {/* APIs Externas */}
@@ -211,64 +214,63 @@ export default function Settings() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>APIs Externas</CardTitle>
+                  <CardTitle>{t('settings.apis.title')}</CardTitle>
                   <CardDescription>
-                    Configura las APIs para conectarte con servicios externos de credenciales,
-                    registros médicos y atestaciones
+                    {t('settings.apis.description')}
                   </CardDescription>
                 </div>
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
                     <Button onClick={() => handleOpenDialog()}>
                       <Plus className="mr-2 h-4 w-4" />
-                      Agregar API
+                      {t('settings.apis.addApi')}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-2xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto mx-4 sm:mx-0">
                     <DialogHeader>
                       <DialogTitle>
-                        {editingConfig ? 'Editar API' : 'Nueva API'}
+                        {editingConfig ? t('settings.apis.editApi') : t('settings.apis.newApi')}
                       </DialogTitle>
                       <DialogDescription>
                         {editingConfig
-                          ? 'Modifica la configuración de la API'
-                          : 'Agrega una nueva API externa para interactuar con servicios de credenciales, registros médicos o atestaciones'}
+                          ? t('settings.apis.editApiDesc')
+                          : t('settings.apis.newApiDesc')}
                       </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="name">Nombre *</Label>
+                        <Label htmlFor="name">{t('settings.apis.name')} *</Label>
                         <Input
                           id="name"
                           value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          placeholder="Nombre del servicio"
+                          placeholder={t('settings.apis.namePlaceholder')}
                           required
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="baseUrl">URL Base *</Label>
+                        <Label htmlFor="baseUrl">{t('settings.apis.baseUrl')} *</Label>
                         <Input
                           id="baseUrl"
                           type="url"
                           value={formData.baseUrl}
                           onChange={(e) => setFormData({ ...formData, baseUrl: e.target.value })}
-                          placeholder="https://api.example.com"
+                          placeholder={t('settings.apis.baseUrlPlaceholder')}
                           required
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="apiKey">API Key (Opcional)</Label>
+                        <Label htmlFor="apiKey">{t('settings.apis.apiKey')}</Label>
                         <Input
                           id="apiKey"
                           type="password"
                           value={formData.apiKey}
                           onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
-                          placeholder="Tu API key"
+                          placeholder={t('settings.apis.apiKeyPlaceholder')}
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="type">Tipo de API *</Label>
+                        <Label htmlFor="type">{t('settings.apis.type')} *</Label>
                         <select
                           id="type"
                           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -276,19 +278,19 @@ export default function Settings() {
                           onChange={(e) => setFormData({ ...formData, type: e.target.value as ApiConfig['type'] })}
                           required
                         >
-                          <option value="credential">Credenciales</option>
-                          <option value="medical">Registro Médico</option>
-                          <option value="attestation">Atestación</option>
-                          <option value="other">Otro</option>
+                          <option value="credential">{t('settings.apis.typeCredential')}</option>
+                          <option value="medical">{t('settings.apis.typeMedical')}</option>
+                          <option value="attestation">{t('settings.apis.typeAttestation')}</option>
+                          <option value="other">{t('settings.apis.typeOther')}</option>
                         </select>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="description">Descripción (Opcional)</Label>
+                        <Label htmlFor="description">{t('settings.apis.description')}</Label>
                         <Input
                           id="description"
                           value={formData.description}
                           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                          placeholder="Descripción del servicio"
+                          placeholder={t('settings.apis.descriptionPlaceholder')}
                         />
                       </div>
                       <div className="flex items-center gap-2">
@@ -300,16 +302,16 @@ export default function Settings() {
                           className="rounded border-gray-300"
                         />
                         <Label htmlFor="enabled" className="cursor-pointer">
-                          Habilitado
+                          {t('settings.apis.enabled')}
                         </Label>
                       </div>
                       <div className="flex gap-2 justify-end">
                         <Button type="button" variant="outline" onClick={handleCloseDialog}>
-                          Cancelar
+                          {t('common.cancel')}
                         </Button>
                         <Button type="submit">
                           <Save className="mr-2 h-4 w-4" />
-                          {editingConfig ? 'Guardar Cambios' : 'Agregar API'}
+                          {editingConfig ? t('settings.apis.saveChanges') : t('settings.apis.addApi')}
                         </Button>
                       </div>
                     </form>
@@ -320,10 +322,10 @@ export default function Settings() {
             <CardContent>
               {configs.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
-                  <p className="mb-4">No hay APIs configuradas aún</p>
+                  <p className="mb-4">{t('settings.apis.noApis')}</p>
                   <Button onClick={() => handleOpenDialog()}>
                     <Plus className="mr-2 h-4 w-4" />
-                    Agregar Primera API
+                    {t('settings.apis.addFirstApi')}
                   </Button>
                 </div>
               ) : (
@@ -341,7 +343,7 @@ export default function Settings() {
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className="font-semibold truncate">{config.name}</h3>
                             <Badge variant={config.enabled ? 'default' : 'secondary'}>
-                              {config.enabled ? 'Habilitado' : 'Deshabilitado'}
+                              {config.enabled ? t('settings.apis.enabledStatus') : t('settings.apis.disabledStatus')}
                             </Badge>
                             <Badge variant="outline">{getTypeLabel(config.type)}</Badge>
                           </div>
@@ -367,7 +369,7 @@ export default function Settings() {
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            if (confirm('¿Estás seguro de eliminar esta API?')) {
+                            if (confirm(t('settings.apis.deleteConfirm'))) {
                               deleteConfig(config.id)
                             }
                           }}
@@ -385,8 +387,7 @@ export default function Settings() {
           <Alert>
             <Shield className="h-4 w-4" />
             <AlertDescription>
-              <strong>Seguridad:</strong> Las API keys se almacenan localmente en tu dispositivo
-              y nunca se comparten con terceros. Asegúrate de usar conexiones HTTPS para todas las APIs.
+              {t('settings.apis.securityNote')}
             </AlertDescription>
           </Alert>
         </TabsContent>
@@ -395,27 +396,48 @@ export default function Settings() {
         <TabsContent value="general" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Configuración General</CardTitle>
+              <CardTitle>{t('settings.general')}</CardTitle>
               <CardDescription>
-                Ajustes generales de la aplicación
+                {t('settings.generalDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Idioma</Label>
-                <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                  <option value="es">Español</option>
-                  <option value="en">English</option>
+                <Label>{t('settings.language')}</Label>
+                <select 
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value as 'es' | 'en')}
+                >
+                  <option value="es">{t('settings.spanish')}</option>
+                  <option value="en">{t('settings.english')}</option>
                 </select>
               </div>
               <div className="space-y-2">
-                <Label>Moneda de Visualización</Label>
+                <Label>{t('settings.currency')}</Label>
                 <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                   <option value="USD">USD ($)</option>
                   <option value="EUR">EUR (€)</option>
                   <option value="DOT">DOT</option>
                 </select>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('settings.legalInfo')}</CardTitle>
+              <CardDescription>
+                {t('settings.legalInfoDesc')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild variant="outline" className="w-full">
+                <Link to="/about">
+                  <Info className="mr-2 h-4 w-4" />
+                  {t('settings.viewAbout')}
+                </Link>
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -426,9 +448,9 @@ export default function Settings() {
 
           <Card data-section="backup">
             <CardHeader>
-              <CardTitle>Backup e Importación</CardTitle>
+              <CardTitle>{t('settings.backup.title')}</CardTitle>
               <CardDescription>
-                Exporta o importa todos tus datos
+                {t('settings.backup.description')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -438,9 +460,9 @@ export default function Settings() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Datos y Almacenamiento</CardTitle>
+              <CardTitle>{t('settings.data.title')}</CardTitle>
               <CardDescription>
-                Gestiona los datos almacenados localmente en tu dispositivo
+                {t('settings.data.description')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

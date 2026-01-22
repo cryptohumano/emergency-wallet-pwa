@@ -19,12 +19,14 @@ import { downloadBackup, readBackupFile, importBackup, type BackupData } from '@
 import { useKeyringContext } from '@/contexts/KeyringContext'
 import { useNavigate } from 'react-router-dom'
 import { decrypt } from '@/utils/encryption'
+import { useI18n } from '@/contexts/I18nContext'
 
 interface BackupManagerProps {
   onImportComplete?: () => void
 }
 
 export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
+  const { t } = useI18n()
   const navigate = useNavigate()
   const { refreshStoredAccounts, refreshWebAuthnCredentials, unlock } = useKeyringContext()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -69,9 +71,9 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
       await downloadBackup(exportOptions)
       console.log('[BackupManager] ✅ Backup descargado exitosamente')
       const sizeInfo = exportOptions.includeImages || exportOptions.includePDFs
-        ? ' (incluye imágenes/PDFs - archivo más grande)'
-        : ' (solo metadata - archivo más pequeño)'
-      setSuccess(`Backup exportado exitosamente${sizeInfo}. El archivo debería descargarse automáticamente.`)
+        ? t('backup.exportSuccessWithFiles')
+        : t('backup.exportSuccessWithoutFiles')
+      setSuccess(`${t('backup.exportSuccess')}${sizeInfo}. ${t('backup.exportSuccessDesc')}`)
       
       // Mostrar información adicional en consola para debugging
       console.log('[BackupManager] Si no se descargó el archivo, verifica:')
@@ -79,13 +81,13 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
       console.log('  2. Que no haya bloqueadores de pop-ups activos')
       console.log('  3. La consola del navegador para más detalles')
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido al exportar backup'
+      const errorMessage = err instanceof Error ? err.message : t('backup.exportError')
       console.error('[BackupManager] ❌ Error:', err)
       console.error('[BackupManager] Detalles:', {
         message: errorMessage,
         stack: err instanceof Error ? err.stack : undefined
       })
-      setError(`Error al exportar backup: ${errorMessage}. Revisa la consola para más detalles.`)
+      setError(`${t('backup.exportError')}: ${errorMessage}. ${t('backup.exportErrorDesc')}`)
     } finally {
       setIsExporting(false)
     }
@@ -120,7 +122,7 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
       // Guardar el backup en el estado para importarlo después
       ;(window as any).__pendingBackup = backup
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al leer el archivo de backup')
+      setError(err instanceof Error ? err.message : t('backup.readError'))
       setIsImporting(false)
     }
 
@@ -139,14 +141,14 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
 
     const backup = (window as any).__pendingBackup as BackupData | undefined
     if (!backup) {
-      setError('No hay backup pendiente para importar')
+      setError(t('backup.noPendingBackup'))
       return
     }
 
     // Si hay cuentas en el backup, verificar la contraseña
     if (backup.accounts && backup.accounts.length > 0) {
       if (!importPassword) {
-        setPasswordError('La contraseña es requerida para importar cuentas encriptadas')
+        setPasswordError(t('backup.passwordRequired'))
         return
       }
 
@@ -156,7 +158,7 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
         await decrypt(testAccount.encryptedData, importPassword)
         setPasswordError(null)
       } catch (err) {
-        setPasswordError('Contraseña incorrecta. Por favor verifica la contraseña que usaste al exportar el backup.')
+        setPasswordError(t('backup.wrongPassword'))
         return
       }
     }
@@ -198,21 +200,21 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
 
           if (totalImported > 0) {
             const parts = [
-              `${result.accountsImported} cuenta(s)`,
-              `${result.contactsImported} contacto(s)`,
-              `${result.apiConfigsImported} configuración(es) de API`,
-              `${result.webauthnImported} credencial(es) WebAuthn`,
-              `${result.transactionsImported} transacción(es)`,
+              `${result.accountsImported} ${t('backup.account')}`,
+              `${result.contactsImported} ${t('backup.contact')}`,
+              `${result.apiConfigsImported} ${t('backup.apiConfig')}`,
+              `${result.webauthnImported} ${t('backup.webauthnCredential')}`,
+              `${result.transactionsImported} ${t('backup.transaction')}`,
             ]
             if (result.mountainLogsImported > 0) {
-              parts.push(`${result.mountainLogsImported} bitácora(s)`)
+              parts.push(`${result.mountainLogsImported} ${t('backup.mountainLog')}`)
             }
             if (result.documentsImported > 0) {
-              parts.push(`${result.documentsImported} documento(s)`)
+              parts.push(`${result.documentsImported} ${t('backup.document')}`)
             }
-            setSuccess(`Importación completada: ${parts.join(', ')}`)
+            setSuccess(`${t('backup.importSuccess')}: ${parts.join(', ')}`)
       } else {
-        setSuccess('No se importaron nuevos datos (puede que ya existan)')
+        setSuccess(t('backup.importSuccessNoData'))
       }
 
       if (result.errors.length > 0) {
@@ -239,7 +241,7 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
       }
     } catch (err) {
       console.error('[BackupManager] Error durante importación:', err)
-      setError(err instanceof Error ? err.message : 'Error al importar backup')
+      setError(err instanceof Error ? err.message : t('backup.importError'))
     } finally {
       console.log('[BackupManager] Finalizando importación...')
       setIsImporting(false)
@@ -261,9 +263,9 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-semibold">Backup e Importación</h3>
+        <h3 className="text-lg font-semibold">{t('backup.title')}</h3>
         <p className="text-sm text-muted-foreground">
-          Exporta o importa todos tus datos (cuentas, contactos, configuraciones)
+          {t('backup.description')}
         </p>
       </div>
 
@@ -285,7 +287,7 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            <strong>Errores durante la importación:</strong>
+            <strong>{t('backup.importErrors')}</strong>
             <ul className="list-disc list-inside mt-2 space-y-1">
               {importResult.errors.map((err, idx) => (
                 <li key={idx} className="text-sm">{err}</li>
@@ -301,15 +303,15 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Download className="h-5 w-5" />
-              Exportar Backup
+              {t('backup.exportTitle')}
             </CardTitle>
             <CardDescription>
-              Descarga un archivo JSON con todos tus datos
+              {t('backup.exportDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Opciones de exportación</Label>
+              <Label className="text-sm font-medium">{t('backup.exportOptions')}</Label>
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <Checkbox
@@ -320,7 +322,7 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
                     }
                   />
                   <Label htmlFor="includeImages" className="text-sm font-normal cursor-pointer">
-                    Incluir imágenes completas (base64)
+                    {t('backup.includeImages')}
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -332,13 +334,12 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
                     }
                   />
                   <Label htmlFor="includePDFs" className="text-sm font-normal cursor-pointer">
-                    Incluir PDFs completos (base64)
+                    {t('backup.includePDFs')}
                   </Label>
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                Por defecto solo se incluye metadata (archivo más pequeño). 
-                Marca estas opciones para incluir imágenes y PDFs completos (archivo más grande).
+                {t('backup.exportOptionsHelp')}
               </p>
             </div>
             <Button
@@ -349,18 +350,17 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
               {isExporting ? (
                 <>
                   <Download className="mr-2 h-4 w-4 animate-spin" />
-                  Exportando...
+                  {t('backup.exporting')}
                 </>
               ) : (
                 <>
                   <Download className="mr-2 h-4 w-4" />
-                  Descargar Backup
+                  {t('backup.download')}
                 </>
               )}
             </Button>
             <p className="text-xs text-muted-foreground">
-              El archivo incluirá: cuentas, credenciales WebAuthn, contactos, configuraciones de API, 
-              bitácoras y documentos {exportOptions.includeImages || exportOptions.includePDFs ? '(con imágenes/PDFs)' : '(solo metadata)'}
+              {t('backup.fileIncludes')} {exportOptions.includeImages || exportOptions.includePDFs ? t('backup.fileIncludesWithFiles') : t('backup.fileIncludesWithoutFiles')}
             </p>
           </CardContent>
         </Card>
@@ -370,10 +370,10 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Upload className="h-5 w-5" />
-              Importar Backup
+              {t('backup.importTitle')}
             </CardTitle>
             <CardDescription>
-              Restaura datos desde un archivo de backup
+              {t('backup.importDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -393,17 +393,17 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
               {isImporting ? (
                 <>
                   <Upload className="mr-2 h-4 w-4 animate-spin" />
-                  Procesando...
+                  {t('backup.processing')}
                 </>
               ) : (
                 <>
                   <Upload className="mr-2 h-4 w-4" />
-                  Seleccionar Archivo
+                  {t('backup.selectFile')}
                 </>
               )}
             </Button>
             <p className="text-xs text-muted-foreground mt-2">
-              Selecciona un archivo JSON de backup para restaurar tus datos
+              {t('backup.selectFileHelp')}
             </p>
           </CardContent>
         </Card>
@@ -413,9 +413,9 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] sm:max-h-[80vh] overflow-y-auto mx-4 sm:mx-0">
           <DialogHeader>
-            <DialogTitle>Confirmar Importación</DialogTitle>
+            <DialogTitle>{t('backup.confirmTitle')}</DialogTitle>
             <DialogDescription>
-              Revisa los datos que se importarán y selecciona las opciones
+              {t('backup.confirmDesc')}
             </DialogDescription>
           </DialogHeader>
 
@@ -424,19 +424,19 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                  <strong>Información del Backup:</strong>
+                  <strong>{t('backup.backupInfo')}</strong>
                   <ul className="list-disc list-inside mt-2 space-y-1">
-                    <li>Fecha de creación: {backupDate}</li>
-                    <li>Versión: {backup.version}</li>
-                    <li>Cuentas: {accountsCount}</li>
-                    <li>Contactos: {contactsCount}</li>
-                    <li>Configuraciones de API: {apiConfigsCount}</li>
-                    <li>Credenciales WebAuthn: {webauthnCount}</li>
+                    <li>{t('backup.createdDate')}: {backupDate}</li>
+                    <li>{t('backup.version')}: {backup.version}</li>
+                    <li>{t('backup.accounts')}: {accountsCount}</li>
+                    <li>{t('backup.contacts')}: {contactsCount}</li>
+                    <li>{t('backup.apiConfigs')}: {apiConfigsCount}</li>
+                    <li>{t('backup.webauthnCredentials')}: {webauthnCount}</li>
                     {mountainLogsCount > 0 && (
-                      <li>Bitácoras: {mountainLogsCount} {includesImages ? '(con imágenes)' : '(solo metadata)'}</li>
+                      <li>{t('backup.mountainLogs')}: {mountainLogsCount} {includesImages ? t('backup.withImages') : t('backup.onlyMetadata')}</li>
                     )}
                     {documentsCount > 0 && (
-                      <li>Documentos: {documentsCount} {includesPDFs ? '(con PDFs)' : '(solo metadata)'}</li>
+                      <li>{t('backup.documents')}: {documentsCount} {includesPDFs ? t('backup.withPDFs') : t('backup.onlyMetadata')}</li>
                     )}
                   </ul>
                 </AlertDescription>
@@ -444,9 +444,9 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
 
               <div className="space-y-4">
                 <div>
-                  <Label className="text-base font-semibold">Opciones de Importación</Label>
+                  <Label className="text-base font-semibold">{t('backup.importOptions')}</Label>
                   <p className="text-sm text-muted-foreground mb-3">
-                    Selecciona qué datos sobrescribir si ya existen
+                    {t('backup.importOptionsDesc')}
                   </p>
                 </div>
 
@@ -460,7 +460,7 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
                       }
                     />
                     <Label htmlFor="overwriteAccounts" className="cursor-pointer">
-                      Sobrescribir cuentas existentes ({accountsCount} cuenta(s))
+                      {t('backup.overwriteAccounts')} ({accountsCount} {t('backup.account')})
                     </Label>
                   </div>
 
@@ -473,7 +473,7 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
                       }
                     />
                     <Label htmlFor="overwriteContacts" className="cursor-pointer">
-                      Sobrescribir contactos existentes ({contactsCount} contacto(s))
+                      {t('backup.overwriteContacts')} ({contactsCount} {t('backup.contact')})
                     </Label>
                   </div>
 
@@ -486,7 +486,7 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
                       }
                     />
                     <Label htmlFor="overwriteApiConfigs" className="cursor-pointer">
-                      Sobrescribir configuraciones de API ({apiConfigsCount} configuración(es))
+                      {t('backup.overwriteApiConfigs')} ({apiConfigsCount} {t('backup.apiConfig')})
                     </Label>
                   </div>
 
@@ -499,7 +499,7 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
                       }
                     />
                     <Label htmlFor="overwriteWebAuthn" className="cursor-pointer">
-                      Sobrescribir credenciales WebAuthn ({webauthnCount} credencial(es))
+                      {t('backup.overwriteWebAuthn')} ({webauthnCount} {t('backup.webauthnCredential')})
                     </Label>
                   </div>
 
@@ -513,7 +513,7 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
                         }
                       />
                       <Label htmlFor="overwriteMountainLogs" className="cursor-pointer">
-                        Sobrescribir bitácoras existentes ({mountainLogsCount} bitácora(s))
+                        {t('backup.overwriteMountainLogs')} ({mountainLogsCount} {t('backup.mountainLog')})
                       </Label>
                     </div>
                   )}
@@ -528,7 +528,7 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
                         }
                       />
                       <Label htmlFor="overwriteDocuments" className="cursor-pointer">
-                        Sobrescribir documentos existentes ({documentsCount} documento(s))
+                        {t('backup.overwriteDocuments')} ({documentsCount} {t('backup.document')})
                       </Label>
                     </div>
                   )}
@@ -537,7 +537,7 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
                 {/* Campo de contraseña si hay cuentas en el backup */}
                 {backup.accounts && backup.accounts.length > 0 && (
                   <div className="space-y-2">
-                    <Label htmlFor="importPassword">Contraseña del Backup *</Label>
+                    <Label htmlFor="importPassword">{t('backup.backupPassword')} *</Label>
                     <div className="relative">
                       <Input
                         id="importPassword"
@@ -547,7 +547,7 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
                           setImportPassword(e.target.value)
                           setPasswordError(null)
                         }}
-                        placeholder="Contraseña usada al exportar el backup"
+                        placeholder={t('backup.backupPasswordPlaceholder')}
                         className={passwordError ? 'border-destructive' : ''}
                       />
                       <Button
@@ -568,8 +568,7 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
                       <p className="text-sm text-destructive">{passwordError}</p>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      Esta es la contraseña que usaste para proteger tus cuentas cuando las creaste o exportaste.
-                      Se necesita para desencriptar y usar las cuentas importadas.
+                      {t('backup.backupPasswordHelp')}
                     </p>
                   </div>
                 )}
@@ -577,9 +576,7 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
                 <Alert>
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>
-                    <strong>Advertencia:</strong> Si no seleccionas "Sobrescribir", los datos existentes
-                    se mantendrán y solo se importarán los nuevos. Si seleccionas "Sobrescribir", los datos
-                    del backup reemplazarán los existentes.
+                    {t('backup.importWarning')}
                   </AlertDescription>
                 </Alert>
               </div>
@@ -596,7 +593,7 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
               }}
               disabled={isImporting}
             >
-              Cancelar
+              {t('backup.cancel')}
             </Button>
             <Button
               onClick={handleImport}
@@ -608,12 +605,12 @@ export function BackupManager({ onImportComplete }: BackupManagerProps = {}) {
               {isImporting ? (
                 <>
                   <Upload className="mr-2 h-4 w-4 animate-spin" />
-                  Importando...
+                  {t('backup.importing')}
                 </>
               ) : (
                 <>
                   <Upload className="mr-2 h-4 w-4" />
-                  Importar
+                  {t('backup.import')}
                 </>
               )}
             </Button>

@@ -14,8 +14,10 @@ import {
 } from '@/utils/webauthn'
 import { useKeyringContext } from '@/contexts/KeyringContext'
 import type { WebAuthnCredential } from '@/utils/webauthn'
+import { useI18n } from '@/contexts/I18nContext'
 
 export function WebAuthnCredentialsManager() {
+  const { t } = useI18n()
   const { refreshWebAuthnCredentials } = useKeyringContext()
   const [credentials, setCredentials] = useState<WebAuthnCredential[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -86,7 +88,7 @@ export function WebAuthnCredentialsManager() {
 
   const handleRegister = async () => {
     if (!isAvailable) {
-      setError('WebAuthn no está disponible en este navegador')
+      setError(t('webauthn.notAvailableError'))
       return
     }
 
@@ -101,10 +103,11 @@ export function WebAuthnCredentialsManager() {
         .map(b => b.toString(16).padStart(2, '0'))
         .join('')
 
+      const defaultUser = t('webauthn.userNamePlaceholder')
       const credential = await registerWebAuthnCredential(
         userIdHex,
-        userName || 'Usuario',
-        userName || 'Usuario de Aura Wallet',
+        userName || defaultUser,
+        userName || `Usuario de Emergency Wallet`,
         credentialName || undefined
       )
 
@@ -114,11 +117,11 @@ export function WebAuthnCredentialsManager() {
       // Actualizar el estado del keyring
       await refreshWebAuthnCredentials()
       
-      setSuccess('Credencial WebAuthn registrada exitosamente. Ahora puedes usarla para desbloquear tu wallet.')
+      setSuccess(t('webauthn.registerSuccess'))
       setCredentialName('')
-      setUserName('Usuario')
+      setUserName(defaultUser)
     } catch (err: any) {
-      setError(err.message || 'Error al registrar credencial WebAuthn')
+      setError(err.message || t('webauthn.registerError'))
     } finally {
       setIsRegistering(false)
     }
@@ -133,8 +136,7 @@ export function WebAuthnCredentialsManager() {
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          WebAuthn no está disponible en este navegador o dispositivo.
-          WebAuthn requiere un navegador moderno con soporte para la Web Authentication API.
+          {t('webauthn.notAvailable')}
         </AlertDescription>
       </Alert>
     )
@@ -144,13 +146,13 @@ export function WebAuthnCredentialsManager() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Credenciales WebAuthn</h3>
+          <h3 className="text-lg font-semibold">{t('webauthn.title')}</h3>
           <p className="text-sm text-muted-foreground">
-            Gestiona tus credenciales de autenticación biométrica o PIN
+            {t('webauthn.description')}
           </p>
         </div>
         <Button variant="outline" onClick={loadCredentials} disabled={isLoading}>
-          {isLoading ? 'Cargando...' : 'Actualizar'}
+          {isLoading ? t('webauthn.loading') : t('webauthn.refresh')}
         </Button>
       </div>
 
@@ -158,7 +160,7 @@ export function WebAuthnCredentialsManager() {
         <Alert>
           <CheckCircle className="h-4 w-4" />
           <AlertDescription>
-            Tu dispositivo soporta autenticación biométrica (huella dactilar, reconocimiento facial, PIN, etc.)
+            {t('webauthn.biometricSupported')}
           </AlertDescription>
         </Alert>
       )}
@@ -168,32 +170,32 @@ export function WebAuthnCredentialsManager() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
-            Registrar Nueva Credencial
+            {t('webauthn.registerTitle')}
           </CardTitle>
           <CardDescription>
-            Registra una nueva credencial WebAuthn para desbloquear tu wallet sin contraseña
+            {t('webauthn.registerDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="userName">Nombre de Usuario (Opcional)</Label>
+            <Label htmlFor="userName">{t('webauthn.userName')}</Label>
             <Input
               id="userName"
               value={userName}
               onChange={(e) => setUserName(e.target.value)}
-              placeholder="Usuario"
+              placeholder={t('webauthn.userNamePlaceholder')}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="credentialName">Nombre de la Credencial (Opcional)</Label>
+            <Label htmlFor="credentialName">{t('webauthn.credentialName')}</Label>
             <Input
               id="credentialName"
               value={credentialName}
               onChange={(e) => setCredentialName(e.target.value)}
-              placeholder="Mi Huella Dactilar / PIN"
+              placeholder={t('webauthn.credentialNamePlaceholder')}
             />
             <p className="text-xs text-muted-foreground">
-              Un nombre descriptivo para identificar esta credencial (ej: "Huella Dactilar", "PIN Windows Hello")
+              {t('webauthn.credentialNameHelp')}
             </p>
           </div>
           <Button
@@ -202,11 +204,10 @@ export function WebAuthnCredentialsManager() {
             className="w-full"
           >
             <Fingerprint className="mr-2 h-4 w-4" />
-            {isRegistering ? 'Registrando...' : 'Registrar Credencial WebAuthn'}
+            {isRegistering ? t('webauthn.registering') : t('webauthn.register')}
           </Button>
           <p className="text-xs text-muted-foreground">
-            Se te pedirá que uses tu huella dactilar, reconocimiento facial, PIN, o clave de seguridad
-            para completar el registro. En Windows Hello, puedes usar PIN sin hardware USB.
+            {t('webauthn.registerHelp')}
           </p>
         </CardContent>
       </Card>
@@ -227,14 +228,13 @@ export function WebAuthnCredentialsManager() {
 
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">
-          <p>Cargando credenciales...</p>
+          <p>{t('webauthn.loadingCredentials')}</p>
         </div>
       ) : credentials.length === 0 ? (
         <Alert>
           <Shield className="h-4 w-4" />
           <AlertDescription>
-            No hay credenciales WebAuthn registradas. Puedes registrar una desde el
-            componente de desbloqueo del wallet.
+            {t('webauthn.noCredentials')}
           </AlertDescription>
         </Alert>
       ) : (
@@ -246,24 +246,24 @@ export function WebAuthnCredentialsManager() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <h4 className="font-semibold">
-                        {credential.name || 'Credencial sin nombre'}
+                        {credential.name || t('webauthn.unnamedCredential')}
                       </h4>
                       <Badge variant="outline">WebAuthn</Badge>
                     </div>
                     <div className="space-y-1 text-sm text-muted-foreground">
                       <p>
-                        <strong>ID:</strong> {credential.id.substring(0, 20)}...
+                        <strong>{t('webauthn.id')}:</strong> {credential.id.substring(0, 20)}...
                       </p>
                       <p>
-                        <strong>Creada:</strong> {formatDate(credential.createdAt)}
+                        <strong>{t('webauthn.created')}:</strong> {formatDate(credential.createdAt)}
                       </p>
                       {credential.lastUsedAt && (
                         <p>
-                          <strong>Último uso:</strong> {formatDate(credential.lastUsedAt)}
+                          <strong>{t('webauthn.lastUsed')}:</strong> {formatDate(credential.lastUsedAt)}
                         </p>
                       )}
                       <p>
-                        <strong>Usos:</strong> {credential.counter}
+                        <strong>{t('webauthn.uses')}:</strong> {credential.counter}
                       </p>
                     </div>
                   </div>
@@ -274,11 +274,11 @@ export function WebAuthnCredentialsManager() {
                     disabled={deletingId === credential.id}
                   >
                     {deletingId === credential.id ? (
-                      'Eliminando...'
+                      t('webauthn.deleting')
                     ) : (
                       <>
                         <Trash2 className="h-4 w-4 mr-2" />
-                        Eliminar
+                        {t('webauthn.delete')}
                       </>
                     )}
                   </Button>
@@ -292,9 +292,7 @@ export function WebAuthnCredentialsManager() {
       <Alert>
         <Shield className="h-4 w-4" />
         <AlertDescription>
-          <strong>Nota:</strong> Eliminar una credencial WebAuthn no afecta tus cuentas.
-          Solo eliminará la opción de desbloquear usando esa credencial. Siempre podrás
-          desbloquear usando tu contraseña o registrar una nueva credencial WebAuthn.
+          {t('webauthn.note')}
         </AlertDescription>
       </Alert>
     </div>

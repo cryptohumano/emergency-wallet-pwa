@@ -12,7 +12,7 @@ import { useRemarkListenerContext } from '@/contexts/RemarkListenerContext'
 import { useActiveAccount } from '@/contexts/ActiveAccountContext'
 import { useRadioMonitor } from '@/contexts/RadioMonitorContext'
 import { formatDistanceToNow, format } from 'date-fns'
-import { es } from 'date-fns/locale/es'
+import { es, enUS } from 'date-fns/locale'
 import { useState, useMemo, useEffect } from 'react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import type { BlockchainEvent } from '@/services/blockchain/RemarkListener'
@@ -21,8 +21,10 @@ import type { Emergency } from '@/types/emergencies'
 import { EmergencyMap } from '@/components/emergencies/EmergencyMap'
 import { toast } from 'sonner'
 import Identicon from '@polkadot/react-identicon'
+import { useI18n } from '@/contexts/I18nContext'
 
 export function BlockchainRadioMonitor() {
+  const { t, language } = useI18n()
   const { 
     isListening, 
     events, 
@@ -72,12 +74,12 @@ export function BlockchainRadioMonitor() {
   // Solicitar permisos de notificación
   const requestNotificationPermission = async () => {
     if (!('Notification' in window)) {
-      toast.error('Tu navegador no soporta notificaciones')
+      toast.error(t('radioMonitor.notificationsNotSupported'))
       return
     }
 
     if (Notification.permission === 'granted') {
-      toast.info('Los permisos de notificación ya están otorgados')
+      toast.info(t('radioMonitor.notificationsAlreadyGranted'))
       return
     }
 
@@ -86,17 +88,17 @@ export function BlockchainRadioMonitor() {
       setNotificationPermission(permission)
       
       if (permission === 'granted') {
-        toast.success('Permisos de notificación otorgados', {
-          description: 'Recibirás notificaciones cuando se detecten emergencias',
+        toast.success(t('radioMonitor.notificationsGranted'), {
+          description: t('radioMonitor.notificationsGrantedDesc'),
         })
       } else if (permission === 'denied') {
-        toast.error('Permisos de notificación denegados', {
-          description: 'Puedes habilitarlos manualmente en la configuración del navegador',
+        toast.error(t('radioMonitor.notificationsDenied'), {
+          description: t('radioMonitor.notificationsDeniedDesc'),
         })
       }
     } catch (error) {
       console.error('[BlockchainRadioMonitor] Error al solicitar permisos:', error)
-      toast.error('Error al solicitar permisos de notificación')
+      toast.error(t('radioMonitor.requestPermissionError'))
     }
   }
 
@@ -236,19 +238,12 @@ export function BlockchainRadioMonitor() {
 
   // Obtener etiqueta de tipo
   const getTypeLabel = (type: Emergency['type']) => {
-    const labels: Record<Emergency['type'], string> = {
-      medical: 'Médica',
-      rescue: 'Rescate',
-      weather: 'Clima',
-      equipment: 'Equipo',
-      lost: 'Extraviado',
-      injury: 'Lesión',
-      illness: 'Enfermedad',
-      avalanche: 'Avalancha',
-      rockfall: 'Caída de rocas',
-      other: 'Otra',
-    }
-    return labels[type] || type
+    return t(`emergencies.types.${type}`) || type
+  }
+  
+  // Obtener etiqueta de severidad
+  const getSeverityLabel = (severity: Emergency['severity']) => {
+    return t(`emergencies.severityLabels.${severity}`)
   }
 
   // Obtener color de severidad
@@ -274,7 +269,7 @@ export function BlockchainRadioMonitor() {
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <Radio className="h-5 w-5 text-primary flex-shrink-0" />
-            <CardTitle className="text-lg truncate">Radio de Blockchain</CardTitle>
+            <CardTitle className="text-lg truncate">{t('radioMonitor.title')}</CardTitle>
           </div>
           <Button
             variant="ghost"
@@ -282,7 +277,7 @@ export function BlockchainRadioMonitor() {
             onClick={() => setIsExpanded(!isExpanded)}
             className="flex-shrink-0"
           >
-            {isExpanded ? 'Colapsar' : 'Expandir'}
+            {isExpanded ? t('radioMonitor.collapse') : t('radioMonitor.expand')}
           </Button>
         </div>
 
@@ -293,20 +288,20 @@ export function BlockchainRadioMonitor() {
             {isListening ? (
               <Badge variant="default" className="gap-1">
                 <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="hidden sm:inline">En Vivo</span>
-                <span className="sm:hidden">Vivo</span>
+                <span className="hidden sm:inline">{t('radioMonitor.live')}</span>
+                <span className="sm:hidden">{t('radioMonitor.liveShort')}</span>
               </Badge>
             ) : (
               <Badge variant="secondary" className="gap-1">
                 <div className="h-2 w-2 rounded-full bg-red-500" />
-                <span className="hidden sm:inline">Desconectado</span>
-                <span className="sm:hidden">Off</span>
+                <span className="hidden sm:inline">{t('radioMonitor.disconnected')}</span>
+                <span className="sm:hidden">{t('radioMonitor.disconnectedShort')}</span>
               </Badge>
             )}
             {currentBlockNumber !== null && (
               <Badge variant="outline" className="gap-1 text-xs">
                 <Activity className="h-3 w-3" />
-                <span className="hidden sm:inline">Bloque #{currentBlockNumber.toLocaleString()}</span>
+                <span className="hidden sm:inline">{t('radioMonitor.block')} #{currentBlockNumber.toLocaleString()}</span>
                 <span className="sm:hidden">#{currentBlockNumber.toLocaleString()}</span>
               </Badge>
             )}
@@ -319,7 +314,7 @@ export function BlockchainRadioMonitor() {
                   theme="polkadot"
                 />
                 <span className="hidden sm:inline">
-                  {activeAccountData.meta.name || 'Cuenta'}
+                  {activeAccountData.meta.name || t('radioMonitor.account')}
                 </span>
                 <span className="sm:hidden">
                   {activeAccount.substring(0, 6)}...
@@ -339,21 +334,21 @@ export function BlockchainRadioMonitor() {
                 className="gap-1 flex-shrink-0"
                 title={
                   notificationPermission === 'granted'
-                    ? 'Notificaciones activadas'
+                    ? t('radioMonitor.notificationsEnabled')
                     : notificationPermission === 'denied'
-                    ? 'Permisos denegados - Habilitar manualmente en configuración'
-                    : 'Solicitar permisos de notificación'
+                    ? t('radioMonitor.notificationsDeniedManual')
+                    : t('radioMonitor.requestPermission')
                 }
               >
                 {notificationPermission === 'granted' ? (
                   <>
                     <Bell className="h-4 w-4" />
-                    <span className="hidden sm:inline">Notificaciones</span>
+                    <span className="hidden sm:inline">{t('radioMonitor.notifications')}</span>
                   </>
                 ) : (
                   <>
                     <BellOff className="h-4 w-4" />
-                    <span className="hidden sm:inline">Notificaciones</span>
+                    <span className="hidden sm:inline">{t('radioMonitor.notifications')}</span>
                   </>
                 )}
               </Button>
@@ -375,14 +370,14 @@ export function BlockchainRadioMonitor() {
               {isManuallyEnabled ? (
                 <>
                   <PowerOff className="h-4 w-4" />
-                  <span className="hidden sm:inline">Apagar</span>
-                  <span className="sm:hidden">Apagar</span>
+                  <span className="hidden sm:inline">{t('radioMonitor.turnOff')}</span>
+                  <span className="sm:hidden">{t('radioMonitor.turnOff')}</span>
                 </>
               ) : (
                 <>
                   <Power className="h-4 w-4" />
-                  <span className="hidden sm:inline">Encender</span>
-                  <span className="sm:hidden">Encender</span>
+                  <span className="hidden sm:inline">{t('radioMonitor.turnOn')}</span>
+                  <span className="sm:hidden">{t('radioMonitor.turnOn')}</span>
                 </>
               )}
             </Button>
@@ -394,32 +389,32 @@ export function BlockchainRadioMonitor() {
           {isManuallyEnabled ? (
             <>
               <div className="hidden sm:block">
-                Escuchando eventos en tiempo real • {receivedCount} emergencia(s) • {events.length} evento(s) total(es)
+                {t('radioMonitor.listening')} • {receivedCount} {t('radioMonitor.emergenciesCount')} • {events.length} {t('radioMonitor.eventsCount')}
               </div>
               <div className="sm:hidden">
-                {receivedCount} emergencia(s) • {events.length} evento(s)
+                {receivedCount} {t('radioMonitor.emergenciesCount')} • {events.length} {t('radioMonitor.eventsCountShort')}
               </div>
               <div className="flex flex-wrap gap-2 text-xs">
                 {currentBlockNumber !== null && (
                   <span className="text-muted-foreground">
-                    Bloque actual: <span className="font-semibold">#{currentBlockNumber.toLocaleString()}</span>
+                    {t('radioMonitor.currentBlock')}: <span className="font-semibold">#{currentBlockNumber.toLocaleString()}</span>
                   </span>
                 )}
                 {lastProcessedBlock !== null && (
                   <span className="text-muted-foreground">
-                    Analizando: <span className="font-semibold">#{lastProcessedBlock.toLocaleString()}</span>
+                    {t('radioMonitor.analyzing')}: <span className="font-semibold">#{lastProcessedBlock.toLocaleString()}</span>
                   </span>
                 )}
                 {blocksProcessedCount > 0 && (
                   <span className="text-muted-foreground">
-                    Procesados: <span className="font-semibold">{blocksProcessedCount}</span>
+                    {t('radioMonitor.processed')}: <span className="font-semibold">{blocksProcessedCount}</span>
                   </span>
                 )}
               </div>
             </>
           ) : (
             <span className="text-muted-foreground">
-              Servicio desactivado. Presiona "Encender Servicio" para activar.
+              {t('radioMonitor.serviceDisabled')}
             </span>
           )}
         </CardDescription>
@@ -434,21 +429,21 @@ export function BlockchainRadioMonitor() {
               size="sm"
               onClick={() => setFilter('all')}
             >
-              Todos ({events.length})
+              {t('radioMonitor.all')} ({events.length})
             </Button>
             <Button
               variant={filter === 'System.Remarked' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setFilter('System.Remarked')}
             >
-              Remarks ({events.filter((e) => e.type === 'System.Remarked').length})
+              {t('radioMonitor.remarks')} ({events.filter((e) => e.type === 'System.Remarked').length})
             </Button>
             <Button
               variant={filter === 'emergencies' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setFilter('emergencies')}
             >
-              Emergencias ({events.filter((e) => e.type === 'System.Remarked').length})
+              {t('radioMonitor.emergencies')} ({events.filter((e) => e.type === 'System.Remarked').length})
             </Button>
           </div>
 
@@ -457,8 +452,8 @@ export function BlockchainRadioMonitor() {
             {filteredEvents.length === 0 ? (
               <div className="text-center text-muted-foreground py-8">
                 <Radio className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>No hay eventos aún</p>
-                <p className="text-sm">Los eventos aparecerán aquí en tiempo real</p>
+                <p>{t('radioMonitor.noEvents')}</p>
+                <p className="text-sm">{t('radioMonitor.noEventsDesc')}</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -481,18 +476,18 @@ export function BlockchainRadioMonitor() {
                             <span className="text-sm font-medium">{event.name}</span>
                             {event.type === 'System.Remarked' && (
                               <Badge variant="destructive" className="text-xs ml-auto">
-                                Ver detalles
+                                {t('radioMonitor.viewDetails')}
                               </Badge>
                             )}
                           </div>
                           {event.accountId && (
                             <p className="text-xs text-muted-foreground mb-1">
-                              Cuenta: {event.accountId.substring(0, 12)}...
+                              {t('radioMonitor.account')}: {event.accountId.substring(0, 12)}...
                             </p>
                           )}
                           {event.blockNumber && (
                             <p className="text-xs text-muted-foreground">
-                              Bloque #{event.blockNumber} • {formatDistanceToNow(event.timestamp, { addSuffix: true, locale: es })}
+                              {t('radioMonitor.block')} #{event.blockNumber} • {formatDistanceToNow(event.timestamp, { addSuffix: true, locale: language === 'es' ? es : enUS })}
                             </p>
                           )}
                         </div>
@@ -508,7 +503,7 @@ export function BlockchainRadioMonitor() {
           <div className="grid grid-cols-3 gap-4 pt-2 border-t">
             <div className="text-center">
               <p className="text-2xl font-bold">{events.length}</p>
-              <p className="text-xs text-muted-foreground">Eventos Totales</p>
+              <p className="text-xs text-muted-foreground">{t('radioMonitor.totalEvents')}</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-red-600">
@@ -518,7 +513,7 @@ export function BlockchainRadioMonitor() {
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-green-600">{receivedCount}</p>
-              <p className="text-xs text-muted-foreground">Emergencias</p>
+              <p className="text-xs text-muted-foreground">{t('radioMonitor.emergencies')}</p>
             </div>
           </div>
         </CardContent>
@@ -530,39 +525,37 @@ export function BlockchainRadioMonitor() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-destructive" />
-              Detalles de Emergencia
+              {t('radioMonitor.emergencyDetails')}
             </DialogTitle>
             <DialogDescription>
-              Información completa de la emergencia detectada en blockchain
+              {t('radioMonitor.emergencyDetailsDesc')}
             </DialogDescription>
           </DialogHeader>
 
           {loadingEmergency ? (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">Cargando detalles...</p>
+              <p className="text-muted-foreground">{t('radioMonitor.loadingDetails')}</p>
             </div>
           ) : selectedEmergency ? (
             <div className="space-y-4">
               {/* Información principal */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="text-sm text-muted-foreground">Tipo</span>
+                  <span className="text-sm text-muted-foreground">{t('radioMonitor.type')}</span>
                   <p className="font-medium">{getTypeLabel(selectedEmergency.type)}</p>
                 </div>
                 <div>
-                  <span className="text-sm text-muted-foreground">Severidad</span>
+                  <span className="text-sm text-muted-foreground">{t('radioMonitor.severity')}</span>
                   <p className={`font-medium ${getSeverityColor(selectedEmergency.severity)}`}>
-                    {selectedEmergency.severity === 'low' ? 'Baja' :
-                     selectedEmergency.severity === 'medium' ? 'Media' :
-                     selectedEmergency.severity === 'high' ? 'Alta' : 'Crítica'}
+                    {getSeverityLabel(selectedEmergency.severity)}
                   </p>
                 </div>
                 <div>
-                  <span className="text-sm text-muted-foreground">Estado</span>
+                  <span className="text-sm text-muted-foreground">{t('radioMonitor.status')}</span>
                   <p className="font-medium">{selectedEmergency.status}</p>
                 </div>
                 <div>
-                  <span className="text-sm text-muted-foreground">ID</span>
+                  <span className="text-sm text-muted-foreground">{t('radioMonitor.id')}</span>
                   <p className="font-mono text-xs">{selectedEmergency.emergencyId}</p>
                 </div>
               </div>
@@ -570,7 +563,7 @@ export function BlockchainRadioMonitor() {
               {/* Descripción */}
               {selectedEmergency.description && (
                 <div>
-                  <h3 className="font-semibold mb-2">Descripción</h3>
+                  <h3 className="font-semibold mb-2">{t('radioMonitor.description')}</h3>
                   <p className="text-sm">{selectedEmergency.description}</p>
                 </div>
               )}
@@ -581,29 +574,29 @@ export function BlockchainRadioMonitor() {
               {/* Identidad del Reporter */}
               {selectedEmergency.metadata?.reporterIdentity && (
                 <div>
-                  <h3 className="font-semibold mb-2">Identidad del Reporter</h3>
+                  <h3 className="font-semibold mb-2">{t('radioMonitor.reporterIdentity')}</h3>
                   <div className="bg-muted p-3 rounded space-y-2">
                     {selectedEmergency.metadata.reporterIdentity.display && (
                       <div>
-                        <span className="text-sm text-muted-foreground">Nombre:</span>
+                        <span className="text-sm text-muted-foreground">{t('radioMonitor.name')}:</span>
                         <p className="font-medium">{selectedEmergency.metadata.reporterIdentity.display}</p>
                       </div>
                     )}
                     {selectedEmergency.metadata.reporterIdentity.legal && (
                       <div>
-                        <span className="text-sm text-muted-foreground">Legal:</span>
+                        <span className="text-sm text-muted-foreground">{t('radioMonitor.legal')}:</span>
                         <p className="text-sm">{selectedEmergency.metadata.reporterIdentity.legal}</p>
                       </div>
                     )}
                     {selectedEmergency.metadata.reporterIdentity.email && (
                       <div>
-                        <span className="text-sm text-muted-foreground">Email:</span>
+                        <span className="text-sm text-muted-foreground">{t('radioMonitor.email')}:</span>
                         <p className="text-sm">{selectedEmergency.metadata.reporterIdentity.email}</p>
                       </div>
                     )}
                     {selectedEmergency.metadata.reporterIdentity.web && (
                       <div>
-                        <span className="text-sm text-muted-foreground">Web:</span>
+                        <span className="text-sm text-muted-foreground">{t('radioMonitor.web')}:</span>
                         <a
                           href={selectedEmergency.metadata.reporterIdentity.web}
                           target="_blank"
@@ -616,7 +609,7 @@ export function BlockchainRadioMonitor() {
                     )}
                     {selectedEmergency.metadata.reporterIdentityChain && (
                       <div>
-                        <span className="text-sm text-muted-foreground">Cadena:</span>
+                        <span className="text-sm text-muted-foreground">{t('radioMonitor.chain')}:</span>
                         <p className="text-sm capitalize">{selectedEmergency.metadata.reporterIdentityChain}</p>
                       </div>
                     )}
@@ -626,11 +619,11 @@ export function BlockchainRadioMonitor() {
 
               {/* Cuenta Reportera */}
               <div>
-                <h3 className="font-semibold mb-2">Cuenta Reportera</h3>
+                <h3 className="font-semibold mb-2">{t('emergencies.detail.reporterAccount')}</h3>
                 <p className="font-mono text-xs break-all">{selectedEmergency.reporterAccount}</p>
                 {!selectedEmergency.metadata?.reporterIdentity && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    ⚠️ No se encontró identidad registrada en PeopleChain
+                    ⚠️ {t('emergencies.detail.noIdentity')}
                   </p>
                 )}
               </div>
@@ -639,18 +632,18 @@ export function BlockchainRadioMonitor() {
               <div>
                 <h3 className="font-semibold mb-2 flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
-                  Coordenadas
+                  {t('radioMonitor.coordinates')}
                 </h3>
                 <div className="text-sm space-y-1">
                   <p>
-                    Lat: {selectedEmergency.location.latitude.toFixed(6)}, Lon:{' '}
+                    {t('radioMonitor.latitude')}: {selectedEmergency.location.latitude.toFixed(6)}, {t('radioMonitor.longitude')}:{' '}
                     {selectedEmergency.location.longitude.toFixed(6)}
                   </p>
                   {selectedEmergency.location.altitude && (
-                    <p>Altitud: {selectedEmergency.location.altitude.toFixed(0)} m</p>
+                    <p>{t('radioMonitor.altitude')}: {selectedEmergency.location.altitude.toFixed(0)} m</p>
                   )}
                   {selectedEmergency.location.accuracy && (
-                    <p>Precisión: {selectedEmergency.location.accuracy.toFixed(0)} m</p>
+                    <p>{t('radioMonitor.accuracy')}: {selectedEmergency.location.accuracy.toFixed(0)} m</p>
                   )}
                   <a
                     href={`https://www.google.com/maps?q=${selectedEmergency.location.latitude},${selectedEmergency.location.longitude}`}
@@ -658,7 +651,7 @@ export function BlockchainRadioMonitor() {
                     rel="noopener noreferrer"
                     className="text-primary hover:underline flex items-center gap-1"
                   >
-                    Ver en Google Maps
+                    {t('radioMonitor.viewOnMap')}
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 </div>
@@ -668,25 +661,25 @@ export function BlockchainRadioMonitor() {
               <div>
                 <h3 className="font-semibold mb-2 flex items-center gap-2">
                   <Clock className="h-4 w-4" />
-                  Fechas
+                  {t('radioMonitor.dates')}
                 </h3>
                 <div className="text-sm space-y-1">
                   <p>
-                    Creada:{' '}
-                    {format(selectedEmergency.createdAt, "PPpp", { locale: es })} (
+                    {t('radioMonitor.created')}:{' '}
+                    {format(selectedEmergency.createdAt, "PPpp", { locale: language === 'es' ? es : enUS })} (
                     {formatDistanceToNow(selectedEmergency.createdAt, {
                       addSuffix: true,
-                      locale: es,
+                      locale: language === 'es' ? es : enUS,
                     })}
                     )
                   </p>
                   {selectedEmergency.submittedAt && (
                     <p>
-                      Enviada:{' '}
-                      {format(selectedEmergency.submittedAt, "PPpp", { locale: es })} (
+                      {t('radioMonitor.submitted')}:{' '}
+                      {format(selectedEmergency.submittedAt, "PPpp", { locale: language === 'es' ? es : enUS })} (
                       {formatDistanceToNow(selectedEmergency.submittedAt, {
                         addSuffix: true,
-                        locale: es,
+                        locale: language === 'es' ? es : enUS,
                       })}
                       )
                     </p>
@@ -697,13 +690,13 @@ export function BlockchainRadioMonitor() {
               {/* Blockchain info */}
               {selectedEmergency.blockchainTxHash && (
                 <div>
-                  <h3 className="font-semibold mb-2">Información Blockchain</h3>
+                  <h3 className="font-semibold mb-2">{t('radioMonitor.blockchain')}</h3>
                   <div className="text-sm space-y-1">
                     <p className="font-mono text-xs break-all">
-                      TX Hash: {selectedEmergency.blockchainTxHash}
+                      {t('radioMonitor.txHash')}: {selectedEmergency.blockchainTxHash}
                     </p>
                     {selectedEmergency.blockchainBlockNumber && (
-                      <p>Bloque: #{selectedEmergency.blockchainBlockNumber.toLocaleString()}</p>
+                      <p>{t('radioMonitor.block')}: #{selectedEmergency.blockchainBlockNumber.toLocaleString()}</p>
                     )}
                     {selectedEmergency.blockchainExtrinsicIndex !== undefined && (
                       <p>Extrinsic Index: {selectedEmergency.blockchainExtrinsicIndex}</p>
@@ -715,7 +708,7 @@ export function BlockchainRadioMonitor() {
               {/* Remark Data (datos decodificados del remark) */}
               {selectedEmergency.remarkData && (
                 <div>
-                  <h3 className="font-semibold mb-2">Datos del Remark (Decodificado)</h3>
+                  <h3 className="font-semibold mb-2">{t('radioMonitor.remarkContent')}</h3>
                   <div className="bg-muted p-3 rounded text-xs overflow-auto max-h-48">
                     <pre className="whitespace-pre-wrap">
                       {JSON.stringify(selectedEmergency.remarkData, (key, value) => {
@@ -732,7 +725,7 @@ export function BlockchainRadioMonitor() {
               {/* Metadata */}
               {selectedEmergency.metadata && Object.keys(selectedEmergency.metadata).length > 0 && (
                 <div>
-                  <h3 className="font-semibold mb-2">Información Adicional</h3>
+                  <h3 className="font-semibold mb-2">{t('emergencies.detail.additionalInfo')}</h3>
                   <div className="bg-muted p-3 rounded text-xs overflow-auto max-h-48">
                     <pre className="whitespace-pre-wrap">
                       {JSON.stringify(selectedEmergency.metadata, (key, value) => {
@@ -751,29 +744,29 @@ export function BlockchainRadioMonitor() {
             <div className="space-y-4">
               <div className="text-center py-4 border-b">
                 <p className="text-muted-foreground font-medium">
-                  Emergencia detectada pero no guardada aún
+                  {t('emergencies.detail.notFound')}
                 </p>
                 <p className="text-xs text-muted-foreground mt-2">
-                  La emergencia puede estar aún procesándose. Intenta recargar en unos segundos.
+                  {t('emergencies.detail.loading')}
                 </p>
               </div>
 
               {/* Mostrar información del evento aunque no esté guardada */}
               <div className="space-y-3">
                 <div>
-                  <h3 className="font-semibold mb-2">Información del Evento</h3>
+                  <h3 className="font-semibold mb-2">{t('radioMonitor.eventData')}</h3>
                   <div className="text-sm space-y-1">
                     {selectedEvent && (
                       <>
                         {selectedEvent.blockNumber && (
                           <p>
-                            <span className="text-muted-foreground">Bloque:</span>{' '}
+                            <span className="text-muted-foreground">{t('radioMonitor.eventBlock')}:</span>{' '}
                             #{selectedEvent.blockNumber.toLocaleString()}
                           </p>
                         )}
                         {selectedEvent.blockHash && (
                           <p>
-                            <span className="text-muted-foreground">Hash:</span>{' '}
+                            <span className="text-muted-foreground">{t('transactions.hash')}:</span>{' '}
                             <span className="font-mono text-xs break-all">
                               {selectedEvent.blockHash}
                             </span>
@@ -781,7 +774,7 @@ export function BlockchainRadioMonitor() {
                         )}
                         {selectedEvent.accountId && (
                           <p>
-                            <span className="text-muted-foreground">Cuenta:</span>{' '}
+                            <span className="text-muted-foreground">{t('radioMonitor.eventAccount')}:</span>{' '}
                             <span className="font-mono text-xs break-all">
                               {selectedEvent.accountId}
                             </span>
@@ -789,8 +782,8 @@ export function BlockchainRadioMonitor() {
                         )}
                         {selectedEvent.timestamp && (
                           <p>
-                            <span className="text-muted-foreground">Detectado:</span>{' '}
-                            {format(new Date(selectedEvent.timestamp), "PPpp", { locale: es })}
+                            <span className="text-muted-foreground">{t('radioMonitor.eventTimestamp')}:</span>{' '}
+                            {format(new Date(selectedEvent.timestamp), "PPpp", { locale: language === 'es' ? es : enUS })}
                           </p>
                         )}
                       </>
@@ -801,7 +794,7 @@ export function BlockchainRadioMonitor() {
                 {/* Mostrar contenido del remark decodificado */}
                 {selectedEvent?.data?.remarkContent ? (
                   <div>
-                    <h3 className="font-semibold mb-2">Contenido del Remark (Decodificado)</h3>
+                    <h3 className="font-semibold mb-2">{t('radioMonitor.remarkContent')}</h3>
                     <div className="bg-muted p-3 rounded text-xs overflow-auto max-h-64">
                       <pre className="whitespace-pre-wrap break-words">
                         {selectedEvent.data.remarkContent}
@@ -810,16 +803,16 @@ export function BlockchainRadioMonitor() {
                     {selectedEvent.data.remarkContent.startsWith('EMERGENCY:') ? (
                       <div className="mt-2 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded">
                         <p className="text-xs text-green-800 dark:text-green-200">
-                          ✅ Este remark contiene datos de emergencia en formato válido
+                          ✅ {t('radioMonitor.validEmergencyFormat')}
                         </p>
                         <p className="text-xs text-green-700 dark:text-green-300 mt-1">
-                          💡 Si no aparece guardada, verifica los logs de la consola para ver si hubo un error al procesarla.
+                          💡 {t('radioMonitor.checkConsole')}
                         </p>
                       </div>
                     ) : (
                       <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded">
                         <p className="text-xs text-yellow-800 dark:text-yellow-200">
-                          ⚠️ Este remark no tiene el prefijo EMERGENCY:, por lo que no se procesará como emergencia.
+                          ⚠️ {t('radioMonitor.noEmergencyPrefix')}
                         </p>
                       </div>
                     )}
@@ -827,18 +820,18 @@ export function BlockchainRadioMonitor() {
                 ) : (
                   <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded">
                     <p className="text-sm text-red-800 dark:text-red-200">
-                      ⚠️ <strong>No se pudo extraer el contenido del remark</strong>
+                      ⚠️ <strong>{t('radioMonitor.cannotExtractRemark')}</strong>
                     </p>
                     <p className="text-xs text-red-700 dark:text-red-300 mt-1">
-                      El contenido del remark no está disponible. Esto puede deberse a:
+                      {t('radioMonitor.noRemarkContent')}
                     </p>
                     <ul className="text-xs text-red-700 dark:text-red-300 mt-1 list-disc list-inside">
-                      <li>Error al decodificar la extrinsic</li>
-                      <li>La extrinsic no es system.remark</li>
-                      <li>Problema de conexión con la blockchain</li>
+                      <li>{t('radioMonitor.noRemarkReason1')}</li>
+                      <li>{t('radioMonitor.noRemarkReason2')}</li>
+                      <li>{t('radioMonitor.noRemarkReason3')}</li>
                     </ul>
                     <p className="text-xs text-red-700 dark:text-red-300 mt-2">
-                      Revisa los logs de la consola para más detalles.
+                      {t('radioMonitor.checkConsoleDetails')}
                     </p>
                   </div>
                 )}
@@ -846,7 +839,7 @@ export function BlockchainRadioMonitor() {
                 {/* Mostrar data del evento completa */}
                 {selectedEvent?.data && (
                   <div>
-                    <h3 className="font-semibold mb-2">Datos del Evento (Completo)</h3>
+                    <h3 className="font-semibold mb-2">{t('radioMonitor.rawData')}</h3>
                     <div className="bg-muted p-3 rounded text-xs overflow-auto max-h-48">
                       <pre className="whitespace-pre-wrap">
                         {JSON.stringify(selectedEvent.data, (key, value) => {
@@ -869,9 +862,7 @@ export function BlockchainRadioMonitor() {
 
                 <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded p-3">
                   <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                    💡 <strong>Nota:</strong> Si esta emergencia cumple con el formato EMERGENCY:,
-                    debería guardarse automáticamente. Si no aparece después de unos segundos,
-                    verifica los logs de la consola.
+                    💡 <strong>{t('common.warning')}:</strong> {t('radioMonitor.emergencyNote')}
                   </p>
                 </div>
               </div>

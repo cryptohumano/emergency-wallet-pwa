@@ -15,25 +15,27 @@ import {
   Mountain,
   Settings,
 } from 'lucide-react'
-
-const navigation = [
-  { name: 'Home', href: '/', icon: Home },
-  { name: 'Cuentas', href: '/accounts', icon: Wallet },
-  { name: 'Enviar', href: '/send', icon: Send },
-  { name: 'Recibir', href: '/receive', icon: QrCode },
-  { name: 'Transacciones', href: '/transactions', icon: History },
-  { name: 'Redes', href: '/networks', icon: Network },
-  { name: 'Contactos', href: '/contacts', icon: Users },
-  { name: 'Documentos', href: '/documents', icon: FileText },
-  { name: 'Flight Logs', href: '/flight-logs', icon: Plane },
-  { name: 'Bitácoras de Montañismo', href: '/mountain-logs', icon: Mountain },
-  { name: 'Expedientes Médicos', href: '/medical-records', icon: Heart },
-  { name: 'Atestaciones', href: '/attestations', icon: Award },
-  { name: 'Configuración', href: '/settings', icon: Settings },
-]
+import { useI18n } from '@/contexts/I18nContext'
 
 export function Sidebar() {
+  const { t } = useI18n()
   const location = useLocation()
+
+  const navigation = [
+    { name: t('nav.home'), href: '/', icon: Home },
+    { name: t('nav.accounts'), href: '/accounts', icon: Wallet },
+    { name: t('nav.send'), href: '/send', icon: Send },
+    { name: t('nav.receive'), href: '/receive', icon: QrCode },
+    { name: t('nav.transactions'), href: '/transactions', icon: History },
+    { name: t('nav.networks'), href: '/networks', icon: Network },
+    { name: t('nav.contacts'), href: '/contacts', icon: Users },
+    { name: t('nav.documents'), href: '/documents', icon: FileText },
+    { name: t('nav.flightLogs'), href: '/flight-logs', icon: Plane },
+    { name: t('nav.mountainLogs'), href: '/mountain-logs', icon: Mountain },
+    { name: t('nav.medicalRecords'), href: '/medical-records', icon: Heart },
+    { name: t('nav.attestations'), href: '/attestations', icon: Award },
+    { name: t('nav.settings'), href: '/settings', icon: Settings },
+  ]
 
   return (
     <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:top-16 border-r bg-background z-30">

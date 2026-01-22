@@ -15,6 +15,16 @@ import AccountDetail from '@/pages/AccountDetail'
 import CreateAccount from '@/pages/CreateAccount'
 import ImportAccount from '@/pages/ImportAccount'
 import Settings from '@/pages/Settings'
+import About from '@/pages/About'
+import Send from '@/pages/Send'
+import Receive from '@/pages/Receive'
+import Networks from '@/pages/Networks'
+import Contacts from '@/pages/Contacts'
+import Documents from '@/pages/Documents'
+import FlightLogs from '@/pages/FlightLogs'
+import MountainLogs from '@/pages/MountainLogs'
+import MedicalRecords from '@/pages/MedicalRecords'
+import Attestations from '@/pages/Attestations'
 
 // Obtener el base path desde import.meta.env.BASE_URL (configurado por Vite)
 const basename = import.meta.env.BASE_URL || '/'
@@ -74,6 +84,46 @@ export const router = createBrowserRouter(
         {
           path: 'settings',
           element: <Settings />,
+        },
+        {
+          path: 'about',
+          element: <About />,
+        },
+        {
+          path: 'send',
+          element: <Send />,
+        },
+        {
+          path: 'receive',
+          element: <Receive />,
+        },
+        {
+          path: 'networks',
+          element: <Networks />,
+        },
+        {
+          path: 'contacts',
+          element: <Contacts />,
+        },
+        {
+          path: 'documents',
+          element: <Documents />,
+        },
+        {
+          path: 'flight-logs',
+          element: <FlightLogs />,
+        },
+        {
+          path: 'mountain-logs',
+          element: <MountainLogs />,
+        },
+        {
+          path: 'medical-records',
+          element: <MedicalRecords />,
+        },
+        {
+          path: 'attestations',
+          element: <Attestations />,
         },
       ],
     },

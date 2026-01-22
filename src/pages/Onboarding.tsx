@@ -13,12 +13,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useKeyringContext } from '@/contexts/KeyringContext'
+import { useI18n } from '@/contexts/I18nContext'
 import { Wallet, Shield, Lock, Sparkles, Key, FileText, Upload, Info, X } from 'lucide-react'
 import { BackupManager } from '@/components/BackupManager'
 import { cn } from '@/lib/utils'
 
 export default function Onboarding() {
   const navigate = useNavigate()
+  const { t } = useI18n()
   const { generateMnemonic, addFromMnemonic, unlock, isUnlocked, hasStoredAccounts } = useKeyringContext()
   const [step, setStep] = useState<'welcome' | 'create' | 'backup' | 'password'>('welcome')
   const [mnemonic, setMnemonic] = useState<string>('')
@@ -122,16 +124,15 @@ export default function Onboarding() {
         {/* Alert colapsable fuera de la card */}
         {showInfoAlert && (
           <div className="fixed top-16 right-4 left-4 sm:left-auto sm:max-w-md z-10 animate-in slide-in-from-top-2">
-            <Alert className="shadow-2xl">
+              <Alert className="shadow-2xl">
               <Shield className="h-4 w-4" />
               <AlertDescription className="text-sm">
-                <strong>Importante:</strong> Emergency Wallet es una aplicación no custodial.
-                Tú eres el único responsable de tus claves privadas y fondos. 
+                <strong>{t('onboarding.important')}:</strong> {t('onboarding.nonCustodial')}
                 <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li>Guarda tu frase de recuperación (mnemonic) en un lugar seguro</li>
-                  <li>Nunca compartas tu frase de recuperación con nadie</li>
-                  <li>Si pierdes tu frase de recuperación, perderás acceso permanente a tus fondos</li>
-                  <li>No hay forma de recuperar tu cuenta sin la frase de recuperación</li>
+                  <li>{t('onboarding.saveRecovery')}</li>
+                  <li>{t('onboarding.neverShare')}</li>
+                  <li>{t('onboarding.losePhrase')}</li>
+                  <li>{t('onboarding.noRecovery')}</li>
                 </ul>
               </AlertDescription>
             </Alert>
@@ -143,16 +144,13 @@ export default function Onboarding() {
             <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
               <Sparkles className="h-8 w-8 text-primary" />
             </div>
-            <CardTitle className="text-3xl">Bienvenido a Emergency Wallet</CardTitle>
+            <CardTitle className="text-3xl">{t('onboarding.welcome')}</CardTitle>
             <CardDescription className="text-lg mt-2">
-              Tu wallet criptográfica segura y privada para emergencias
+              {t('onboarding.description')}
             </CardDescription>
             <div className="mt-4 p-4 bg-muted/50 rounded-lg border">
               <p className="text-sm text-muted-foreground text-left">
-                <strong>Emergency Wallet</strong> es una aplicación blockchain diseñada para detectar, 
-                gestionar y responder a emergencias en tiempo real. Monitorea la blockchain en busca de 
-                llamados de emergencia, indexa eventos críticos y te permite crear y gestionar tus propias 
-                emergencias de forma segura y descentralizada.
+                {t('onboarding.whatIs')}
               </p>
             </div>
           </CardHeader>
@@ -183,7 +181,7 @@ export default function Onboarding() {
 
             <div className="space-y-4">
               <Button onClick={handleStart} className="w-full" size="lg">
-                Crear Mi Primera Cuenta
+                {t('onboarding.createAccount')}
               </Button>
               <Button
                 onClick={() => setShowImportDialog(true)}
@@ -191,7 +189,7 @@ export default function Onboarding() {
                 className="w-full"
                 size="lg"
               >
-                Importar Cuenta Existente
+                {t('onboarding.importAccount')}
               </Button>
             </div>
 
@@ -295,10 +293,9 @@ export default function Onboarding() {
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="w-full max-w-2xl">
           <CardHeader>
-            <CardTitle>Tu Frase de Recuperación</CardTitle>
+            <CardTitle>{t('onboarding.recoveryPhrase')}</CardTitle>
             <CardDescription>
-              Guarda estas 12 palabras en un lugar seguro. Necesitarás esta frase para
-              recuperar tu cuenta si pierdes acceso a este dispositivo.
+              {t('onboarding.recoveryPhraseDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -315,7 +312,7 @@ export default function Onboarding() {
               ) : (
                 <div className="text-center py-8">
                   <Button onClick={() => setShowMnemonic(true)} variant="outline">
-                    Mostrar Frase de Recuperación
+                    {t('onboarding.showPhrase')}
                   </Button>
                 </div>
               )}
@@ -324,8 +321,7 @@ export default function Onboarding() {
             {showMnemonic && (
               <Alert>
                 <AlertDescription>
-                  <strong>⚠️ Advertencia:</strong> No compartas esta frase con nadie.
-                  Cualquiera que tenga acceso a estas palabras puede controlar tu cuenta.
+                  <strong>⚠️ {t('common.warning')}:</strong> {t('onboarding.neverShare')}
                 </AlertDescription>
               </Alert>
             )}
@@ -336,14 +332,14 @@ export default function Onboarding() {
                 variant="outline"
                 className="flex-1"
               >
-                Atrás
+                {t('common.back')}
               </Button>
               <Button
                 onClick={handleBackupConfirmed}
                 className="flex-1"
                 disabled={!showMnemonic}
               >
-                He Guardado la Frase
+                {t('onboarding.savedPhrase')}
               </Button>
             </div>
           </CardContent>
@@ -357,42 +353,41 @@ export default function Onboarding() {
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>Configurar Contraseña</CardTitle>
+            <CardTitle>{t('onboarding.passwordSetup')}</CardTitle>
             <CardDescription>
-              Crea una contraseña segura para proteger tu cuenta. Esta contraseña se
-              usará para desbloquear tu wallet.
+              {t('onboarding.passwordDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nombre de la Cuenta</Label>
+              <Label htmlFor="name">{t('accounts.accountName')}</Label>
               <Input
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Mi Primera Cuenta"
+                placeholder={t('accounts.accountName')}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
+              <Label htmlFor="password">{t('onboarding.password')}</Label>
               <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Mínimo 8 caracteres"
+                placeholder={t('onboarding.minPassword')}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
+              <Label htmlFor="confirmPassword">{t('onboarding.confirmPassword')}</Label>
               <Input
                 id="confirmPassword"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Repite la contraseña"
+                placeholder={t('onboarding.confirmPassword')}
               />
             </div>
 
@@ -408,14 +403,14 @@ export default function Onboarding() {
                 variant="outline"
                 className="flex-1"
               >
-                Atrás
+                {t('common.back')}
               </Button>
               <Button
                 onClick={handleCreateAccount}
                 className="flex-1"
                 disabled={loading || !password || !confirmPassword}
               >
-                {loading ? 'Creando...' : 'Crear Cuenta'}
+                {loading ? t('onboarding.creating') : t('onboarding.create')}
               </Button>
             </div>
           </CardContent>

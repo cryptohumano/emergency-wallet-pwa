@@ -28,6 +28,7 @@ import { useEmergency } from '@/hooks/useEmergency'
 import { useGPSTracking } from '@/hooks/useGPSTracking'
 import type { EmergencyType, EmergencySeverity, GPSPoint } from '@/types/emergencies'
 import type { MountainLog } from '@/types/mountainLogs'
+import { useI18n } from '@/contexts/I18nContext'
 
 interface EmergencyButtonProps {
   log: MountainLog
@@ -40,6 +41,7 @@ export function EmergencyButton({
   currentLocation: propCurrentLocation,
   onEmergencyCreated 
 }: EmergencyButtonProps) {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const [type, setType] = useState<EmergencyType>('medical')
   const [severity, setSeverity] = useState<EmergencySeverity>('high')
@@ -65,7 +67,7 @@ export function EmergencyButton({
     console.log('[EmergencyButton] Iniciando creación de emergencia...')
     
     if (!description.trim() && severity !== 'critical') {
-      toast.error('Por favor, proporciona una descripción de la emergencia')
+      toast.error(t('emergencies.provideDescription'))
       return
     }
 
@@ -121,7 +123,7 @@ export function EmergencyButton({
             accuracy: log.startLocation.accuracy,
             timestamp: Date.now(),
           }
-          toast.warning('Usando ubicación inicial de la bitácora (GPS no disponible)')
+          toast.warning(t('emergencies.usingLogLocation'))
         } else if (log.milestones && log.milestones.length > 0) {
           // Usar ubicación del último milestone
           const lastMilestone = log.milestones[log.milestones.length - 1]
@@ -130,20 +132,20 @@ export function EmergencyButton({
               ...lastMilestone.gpsPoint,
               timestamp: Date.now(),
             }
-            toast.warning('Usando ubicación del último milestone (GPS no disponible)')
+            toast.warning(t('emergencies.usingMilestoneLocation'))
           } else {
-            toast.error('No se pudo obtener la ubicación. Por favor, activa el GPS o agrega un milestone con ubicación.')
+            toast.error(t('emergencies.noLocationError'))
             return
           }
         } else {
-          toast.error('No se pudo obtener la ubicación. Por favor, activa el GPS.')
+          toast.error(t('emergencies.noLocationErrorSimple'))
           return
         }
       }
     }
 
     if (!location) {
-      toast.error('No se pudo obtener la ubicación')
+      toast.error(t('emergencies.gpsError'))
       return
     }
 
@@ -209,8 +211,8 @@ export function EmergencyButton({
       }, accountAddress, logDataForRemark)
 
       if (emergency) {
-        toast.success('Emergencia creada y enviada', {
-          description: 'La emergencia ha sido registrada en la blockchain',
+        toast.success(t('emergencies.emergencyCreated'), {
+          description: t('emergencies.emergencyCreatedDesc'),
         })
         setOpen(false)
         setDescription('')
@@ -218,8 +220,8 @@ export function EmergencyButton({
       }
     } catch (error) {
       console.error('[EmergencyButton] Error:', error)
-      toast.error('Error al crear emergencia', {
-        description: error instanceof Error ? error.message : 'Error desconocido',
+      toast.error(t('emergencies.createError'), {
+        description: error instanceof Error ? error.message : t('emergencies.unknownError'),
       })
     } finally {
       setSubmitting(false)
@@ -234,7 +236,7 @@ export function EmergencyButton({
           size="lg"
           className="w-full sm:w-auto gap-2 critical-glow button-tactile relative overflow-hidden group"
           disabled={!log.milestones || log.milestones.length === 0}
-          title={(!log.milestones || log.milestones.length === 0) ? 'Agrega al menos un milestone antes de activar una emergencia' : 'Activar emergencia'}
+          title={(!log.milestones || log.milestones.length === 0) ? t('emergencies.addMilestoneFirst') : t('emergencies.activateEmergency')}
         >
           <span className="relative z-10 flex items-center gap-2">
             <AlertTriangle className="h-5 w-5" />
@@ -247,72 +249,71 @@ export function EmergencyButton({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-destructive">
             <AlertTriangle className="h-6 w-6" />
-            Activar Emergencia
+            {t('emergencies.activateEmergency')}
           </DialogTitle>
           <DialogDescription>
-            Esta acción enviará una alerta de emergencia a la blockchain.
-            Solo úsala en situaciones reales de emergencia.
+            {t('emergencies.activateEmergencyDesc')}
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="emergency-type">Tipo de Emergencia *</Label>
+            <Label htmlFor="emergency-type">{t('emergencies.type')} *</Label>
             <Select value={type} onValueChange={(value) => setType(value as EmergencyType)}>
               <SelectTrigger id="emergency-type">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="medical">Médica</SelectItem>
-                <SelectItem value="rescue">Rescate</SelectItem>
-                <SelectItem value="weather">Condiciones Climáticas</SelectItem>
-                <SelectItem value="equipment">Fallo de Equipo</SelectItem>
-                <SelectItem value="lost">Extraviado</SelectItem>
-                <SelectItem value="injury">Lesión</SelectItem>
-                <SelectItem value="illness">Enfermedad</SelectItem>
-                <SelectItem value="avalanche">Avalancha</SelectItem>
-                <SelectItem value="rockfall">Caída de Rocas</SelectItem>
-                <SelectItem value="other">Otra</SelectItem>
+                <SelectItem value="medical">{t('emergencies.types.medical')}</SelectItem>
+                <SelectItem value="rescue">{t('emergencies.types.rescue')}</SelectItem>
+                <SelectItem value="weather">{t('emergencies.types.weather')}</SelectItem>
+                <SelectItem value="equipment">{t('emergencies.types.equipment')}</SelectItem>
+                <SelectItem value="lost">{t('emergencies.types.lost')}</SelectItem>
+                <SelectItem value="injury">{t('emergencies.types.injury')}</SelectItem>
+                <SelectItem value="illness">{t('emergencies.types.illness')}</SelectItem>
+                <SelectItem value="avalanche">{t('emergencies.types.avalanche')}</SelectItem>
+                <SelectItem value="rockfall">{t('emergencies.types.rockfall')}</SelectItem>
+                <SelectItem value="other">{t('emergencies.types.other')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="emergency-severity">Severidad *</Label>
+            <Label htmlFor="emergency-severity">{t('emergencies.severity')} *</Label>
             <Select value={severity} onValueChange={(value) => setSeverity(value as EmergencySeverity)}>
               <SelectTrigger id="emergency-severity">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="low">Baja</SelectItem>
-                <SelectItem value="medium">Media</SelectItem>
-                <SelectItem value="high">Alta</SelectItem>
-                <SelectItem value="critical">Crítica</SelectItem>
+                <SelectItem value="low">{t('emergencies.severityLabels.low')}</SelectItem>
+                <SelectItem value="medium">{t('emergencies.severityLabels.medium')}</SelectItem>
+                <SelectItem value="high">{t('emergencies.severityLabels.high')}</SelectItem>
+                <SelectItem value="critical">{t('emergencies.severityLabels.critical')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="emergency-description">
-              Descripción {severity !== 'critical' && '*'}
+              {t('emergencies.description')} {severity !== 'critical' && '*'}
             </Label>
             <Textarea
               id="emergency-description"
-              placeholder="Describe brevemente la situación de emergencia..."
+              placeholder={t('emergencies.describeBriefly')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
             />
             {severity === 'critical' && (
               <p className="text-xs text-muted-foreground">
-                Para emergencias críticas, la descripción es opcional pero recomendada.
+                {t('emergencies.descriptionOptional')}
               </p>
             )}
           </div>
 
           {currentLocation && (
             <div className="text-xs text-muted-foreground p-2 bg-muted rounded">
-              📍 Ubicación: {currentLocation.latitude.toFixed(6)}, {currentLocation.longitude.toFixed(6)}
+              📍 {t('emergencies.location')}: {currentLocation.latitude.toFixed(6)}, {currentLocation.longitude.toFixed(6)}
               {currentLocation.altitude && ` (${Math.round(currentLocation.altitude)}m)`}
             </div>
           )}
@@ -324,7 +325,7 @@ export function EmergencyButton({
               disabled={submitting}
               className="flex-1"
             >
-              Cancelar
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -332,7 +333,7 @@ export function EmergencyButton({
               disabled={submitting}
               className="flex-1 critical-glow button-tactile"
             >
-              {submitting ? 'Enviando...' : 'Confirmar Emergencia'}
+              {submitting ? t('emergencies.sending') : t('emergencies.confirmEmergency')}
             </Button>
           </div>
         </div>

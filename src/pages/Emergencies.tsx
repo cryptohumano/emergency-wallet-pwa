@@ -16,6 +16,7 @@ import { AlertTriangle, MapPin, Clock } from 'lucide-react'
 
 export default function Emergencies() {
   const { emergencies } = useEmergency()
+  const { t, language } = useI18n()
   const [filter, setFilter] = useState<'all' | 'active' | 'resolved'>('all')
 
   const filtered = useMemo(() => {
@@ -126,9 +127,7 @@ function EmergencyCard({ emergency }: { emergency: Emergency }) {
                     emergency.severity === 'high' ? 'severity-high' : ''
                   }`}
                 >
-                  {emergency.severity === 'critical' ? 'CRÍTICA' :
-                   emergency.severity === 'high' ? 'ALTA' :
-                   emergency.severity === 'medium' ? 'MEDIA' : 'BAJA'}
+                  {t(`emergencies.severityLabels.${emergency.severity}`)}
                 </Badge>
                 <Badge variant="outline">{emergency.type}</Badge>
                 <Badge variant="outline">{emergency.status}</Badge>
@@ -147,7 +146,7 @@ function EmergencyCard({ emergency }: { emergency: Emergency }) {
                   <span>
                     {formatDistanceToNow(emergency.createdAt, {
                       addSuffix: true,
-                      locale: es,
+                      locale: language === 'es' ? es : enUS,
                     })}
                   </span>
                 </div>

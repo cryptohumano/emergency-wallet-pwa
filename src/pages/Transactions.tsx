@@ -22,6 +22,7 @@ import {
 import { formatBalanceForDisplay } from '@/utils/balance'
 import { useKeyringContext } from '@/contexts/KeyringContext'
 import { useActiveAccount } from '@/contexts/ActiveAccountContext'
+import { useI18n } from '@/contexts/I18nContext'
 import { 
   Send, 
   ArrowRight,
@@ -45,6 +46,7 @@ type StatusFilter = 'all' | StoredTransaction['status']
 export default function Transactions() {
   const [searchParams] = useSearchParams()
   const { accounts } = useKeyringContext()
+  const { t, language } = useI18n()
   const [transactions, setTransactions] = useState<StoredTransaction[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -127,35 +129,35 @@ export default function Transactions() {
         return (
           <Badge className="bg-green-500 gap-1">
             <CheckCircle className="h-3 w-3" />
-            Finalizada
+            {t('transactions.finalized')}
           </Badge>
         )
       case 'inBlock':
         return (
           <Badge variant="secondary" className="gap-1">
             <CheckCircle className="h-3 w-3" />
-            En Bloque
+            {t('transactions.inBlock')}
           </Badge>
         )
       case 'pending':
         return (
           <Badge variant="secondary" className="gap-1">
             <Clock className="h-3 w-3" />
-            Pendiente
+            {t('transactions.pending')}
           </Badge>
         )
       case 'invalid':
         return (
           <Badge variant="destructive" className="gap-1">
             <XCircle className="h-3 w-3" />
-            Inválida
+            {t('transactions.invalid')}
           </Badge>
         )
       case 'dropped':
         return (
           <Badge variant="destructive" className="gap-1">
             <XCircle className="h-3 w-3" />
-            Descartada
+            {t('transactions.dropped')}
           </Badge>
         )
       default:
@@ -186,9 +188,9 @@ export default function Transactions() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Transacciones</h1>
+          <h1 className="text-3xl font-bold">{t('transactions.title')}</h1>
           <p className="text-muted-foreground mt-2">
-            Historial de todas tus transacciones
+            {t('transactions.description')}
           </p>
         </div>
         <Button
@@ -197,7 +199,7 @@ export default function Transactions() {
           disabled={isLoading}
         >
           <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          Actualizar
+          {t('transactions.refresh')}
         </Button>
       </div>
 
@@ -206,37 +208,37 @@ export default function Transactions() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
-            Filtros
+            {t('transactions.filters')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
-              <Label>Tipo de Filtro</Label>
+              <Label>{t('transactions.filterType')}</Label>
               <Select value={filterType} onValueChange={(v) => setFilterType(v as FilterType)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
-                  <SelectItem value="account">Por Cuenta</SelectItem>
-                  <SelectItem value="chain">Por Cadena</SelectItem>
-                  <SelectItem value="status">Por Estado</SelectItem>
+                  <SelectItem value="all">{t('transactions.all')}</SelectItem>
+                  <SelectItem value="account">{t('transactions.byAccount')}</SelectItem>
+                  <SelectItem value="chain">{t('transactions.byChain')}</SelectItem>
+                  <SelectItem value="status">{t('transactions.byStatus')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {filterType === 'account' && (
               <div className="space-y-2">
-                <Label>Cuenta</Label>
+                <Label>{t('accounts.title')}</Label>
                 <Select value={selectedAccount} onValueChange={setSelectedAccount}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona una cuenta" />
+                    <SelectValue placeholder={t('transactions.selectAccount')} />
                   </SelectTrigger>
                   <SelectContent>
                     {accounts.map((account) => (
                       <SelectItem key={account.address} value={account.address}>
-                        {account.meta.name || 'Sin nombre'} - {formatAddress(account.address)}
+                        {account.meta.name || t('accounts.noName')} - {formatAddress(account.address)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -246,10 +248,10 @@ export default function Transactions() {
 
             {filterType === 'chain' && (
               <div className="space-y-2">
-                <Label>Cadena</Label>
+                <Label>{t('transactions.chain')}</Label>
                 <Select value={selectedChain} onValueChange={setSelectedChain}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona una cadena" />
+                    <SelectValue placeholder={t('transactions.selectChain')} />
                   </SelectTrigger>
                   <SelectContent>
                     {uniqueChains.map((chain) => (
@@ -264,18 +266,18 @@ export default function Transactions() {
 
             {filterType === 'status' && (
               <div className="space-y-2">
-                <Label>Estado</Label>
+                <Label>{t('transactions.status')}</Label>
                 <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="pending">Pendiente</SelectItem>
-                    <SelectItem value="inBlock">En Bloque</SelectItem>
-                    <SelectItem value="finalized">Finalizada</SelectItem>
-                    <SelectItem value="invalid">Inválida</SelectItem>
-                    <SelectItem value="dropped">Descartada</SelectItem>
+                    <SelectItem value="all">{t('transactions.allStatus')}</SelectItem>
+                    <SelectItem value="pending">{t('transactions.pending')}</SelectItem>
+                    <SelectItem value="inBlock">{t('transactions.inBlock')}</SelectItem>
+                    <SelectItem value="finalized">{t('transactions.finalized')}</SelectItem>
+                    <SelectItem value="invalid">{t('transactions.invalid')}</SelectItem>
+                    <SelectItem value="dropped">{t('transactions.dropped')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -284,18 +286,18 @@ export default function Transactions() {
             {/* Filtro de estado adicional (siempre visible) */}
             {filterType !== 'status' && (
               <div className="space-y-2">
-                <Label>Estado</Label>
+                <Label>{t('transactions.status')}</Label>
                 <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="pending">Pendiente</SelectItem>
-                    <SelectItem value="inBlock">En Bloque</SelectItem>
-                    <SelectItem value="finalized">Finalizada</SelectItem>
-                    <SelectItem value="invalid">Inválida</SelectItem>
-                    <SelectItem value="dropped">Descartada</SelectItem>
+                    <SelectItem value="all">{t('transactions.allStatus')}</SelectItem>
+                    <SelectItem value="pending">{t('transactions.pending')}</SelectItem>
+                    <SelectItem value="inBlock">{t('transactions.inBlock')}</SelectItem>
+                    <SelectItem value="finalized">{t('transactions.finalized')}</SelectItem>
+                    <SelectItem value="invalid">{t('transactions.invalid')}</SelectItem>
+                    <SelectItem value="dropped">{t('transactions.dropped')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -307,11 +309,11 @@ export default function Transactions() {
       {/* Lista de Transacciones */}
       <Card>
         <CardHeader>
-          <CardTitle>Historial de Transacciones</CardTitle>
+          <CardTitle>{t('transactions.title')}</CardTitle>
           <CardDescription>
             {transactions.length > 0 
-              ? `${transactions.length} transacción(es) encontrada(s)`
-              : 'No hay transacciones para mostrar'}
+              ? `${transactions.length} ${t('transactions.title').toLowerCase()}`
+              : t('transactions.noTransactionsDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -324,16 +326,16 @@ export default function Transactions() {
           {isLoading ? (
             <div className="text-center py-12">
               <Loader2 className="h-8 w-8 mx-auto mb-4 animate-spin text-primary" />
-              <p className="text-muted-foreground">Cargando transacciones...</p>
+              <p className="text-muted-foreground">{t('common.loading')}</p>
             </div>
           ) : transactions.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Send className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="mb-4">No hay transacciones para mostrar</p>
+              <p className="mb-4">{t('transactions.noTransactions')}</p>
               <Button asChild>
                 <Link to="/send">
                   <Send className="mr-2 h-4 w-4" />
-                  Enviar Primera Transacción
+                  {t('accounts.send')}
                 </Link>
               </Button>
             </div>
@@ -376,20 +378,18 @@ export default function Transactions() {
                               <>
                                 <AlertTriangle className="h-4 w-4 text-red-600" />
                                 <span className="font-semibold text-red-600">
-                                  Emergencia: {emergencyInfo?.type || 'Desconocida'}
+                                  {t('transactions.emergency')}: {emergencyInfo?.type ? t(`emergencies.types.${emergencyInfo.type}`) : t('common.error')}
                                 </span>
                                 <Badge variant="destructive" className="gap-1">
                                   <AlertTriangle className="h-3 w-3" />
-                                  {emergencyInfo?.severity === 'critical' ? 'Crítica' :
-                                   emergencyInfo?.severity === 'high' ? 'Alta' :
-                                   emergencyInfo?.severity === 'medium' ? 'Media' : 'Baja'}
+                                  {emergencyInfo?.severity ? t(`emergencies.severityLabels.${emergencyInfo.severity}`) : ''}
                                 </Badge>
                               </>
                             ) : (
                               <>
                                 <Send className="h-4 w-4 text-muted-foreground" />
                                 <span className="font-semibold">
-                                  {fromAccount?.meta.name || 'Cuenta desconocida'}
+                                  {fromAccount?.meta.name || t('transactions.unknownAccount')}
                                 </span>
                                 <ArrowRight className="h-4 w-4 text-muted-foreground" />
                                 <span className="text-sm text-muted-foreground">
@@ -401,20 +401,20 @@ export default function Transactions() {
                           {isEmergencyTx && emergencyInfo && (
                             <div className="mb-2 text-sm text-muted-foreground">
                               ID: {emergencyInfo.emergencyId.substring(0, 8)}...
-                              {emergencyInfo.relatedLogId && ` • Bitácora: ${emergencyInfo.relatedLogId.substring(0, 8)}...`}
+                              {emergencyInfo.relatedLogId && ` • ${t('transactions.relatedLog')}: ${emergencyInfo.relatedLogId.substring(0, 8)}...`}
                             </div>
                           )}
                           <div className="flex items-center gap-3 flex-wrap">
                             {!isEmergencyTx && (
                               <div className="flex items-center gap-1">
-                                <span className="text-sm text-muted-foreground">Cantidad:</span>
+                                <span className="text-sm text-muted-foreground">{t('transactions.amount')}:</span>
                                 <span className="font-medium">
                                   {formatBalanceForDisplay(BigInt(tx.amount), tx.chain)}
                                 </span>
                               </div>
                             )}
                             <div className="flex items-center gap-1">
-                              <span className="text-sm text-muted-foreground">Cadena:</span>
+                              <span className="text-sm text-muted-foreground">{t('transactions.chain')}:</span>
                               <Badge variant="outline">{tx.chain}</Badge>
                             </div>
                             {tx.fee && !isEmergencyTx && (
@@ -435,7 +435,7 @@ export default function Transactions() {
                               size="sm"
                               className="h-6 w-6 p-0"
                               onClick={() => handleCopyHash(tx.txHash)}
-                              title="Copiar hash"
+                              title={t('transactions.copyHash')}
                             >
                               {copiedHash === tx.txHash ? (
                                 <Check className="h-3 w-3 text-green-500" />
@@ -446,7 +446,7 @@ export default function Transactions() {
                           </div>
                           {tx.blockNumber && (
                             <div className="text-xs text-muted-foreground mt-1">
-                              Bloque #{tx.blockNumber} - {new Date(tx.createdAt).toLocaleString('es-ES')}
+                              {t('emergencies.detail.block')} #{tx.blockNumber} - {new Date(tx.createdAt).toLocaleString(language === 'es' ? 'es-ES' : 'en-US')}
                             </div>
                           )}
                         </div>
@@ -455,7 +455,7 @@ export default function Transactions() {
                         {isEmergencyTx && (
                           <Badge variant="destructive" className="gap-1 mb-1">
                             <AlertTriangle className="h-3 w-3" />
-                            Emergencia
+                            {t('transactions.emergency')}
                           </Badge>
                         )}
                         {getStatusBadge(tx.status)}

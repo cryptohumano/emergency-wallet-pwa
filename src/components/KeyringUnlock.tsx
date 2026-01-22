@@ -6,8 +6,10 @@ import { Input } from '@/components/ui/input'
 import { Lock, Unlock, AlertCircle, Fingerprint } from 'lucide-react'
 import { getAllWebAuthnCredentials } from '@/utils/webauthnStorage'
 import type { WebAuthnCredential } from '@/utils/webauthn'
+import { useI18n } from '@/contexts/I18nContext'
 
 export function KeyringUnlock() {
+  const { t } = useI18n()
   const { isUnlocked, hasStoredAccounts, hasWebAuthnCredentials, unlock, unlockWithWebAuthn, lock, isReady } = useKeyringContext()
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -45,10 +47,10 @@ export function KeyringUnlock() {
     try {
       const success = await unlockWithWebAuthn(credentialId)
       if (!success) {
-        setError('Error al autenticar con WebAuthn')
+        setError(t('keyring.webauthnError'))
       }
     } catch (err: any) {
-      setError(err.message || 'Error al desbloquear con WebAuthn')
+      setError(err.message || t('keyring.webauthnUnlockError'))
     } finally {
       setIsWebAuthnLoading(false)
     }
@@ -61,10 +63,10 @@ export function KeyringUnlock() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Lock className="h-5 w-5" />
-            Estado del Keyring
+            {t('keyring.status')}
           </CardTitle>
           <CardDescription>
-            Inicializando keyring...
+            {t('keyring.initializing')}
           </CardDescription>
         </CardHeader>
       </Card>
@@ -73,7 +75,7 @@ export function KeyringUnlock() {
 
   const handleUnlock = async () => {
     if (!password.trim()) {
-      setError('Por favor ingresa una contraseña')
+      setError(t('keyring.enterPassword'))
       return
     }
 
@@ -83,13 +85,13 @@ export function KeyringUnlock() {
     try {
       const success = await unlock(password)
       if (!success) {
-        setError('Contraseña incorrecta')
+        setError(t('keyring.wrongPassword'))
         setPassword('')
       } else {
         setPassword('')
       }
     } catch (err: any) {
-      setError(err.message || 'Error al desbloquear el keyring')
+      setError(err.message || t('keyring.unlockError'))
     } finally {
       setIsLoading(false)
     }
@@ -107,19 +109,19 @@ export function KeyringUnlock() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Unlock className="h-5 w-5 text-green-600" />
-            Keyring Desbloqueado
+            {t('keyring.unlocked')}
           </CardTitle>
           <CardDescription>
-            Tus cuentas están cargadas y disponibles para operaciones criptográficas
+            {t('keyring.unlockedDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Button onClick={handleLock} variant="outline" className="w-full">
             <Lock className="h-4 w-4 mr-2" />
-            Bloquear Keyring
+            {t('keyring.lock')}
           </Button>
           <p className="text-xs text-muted-foreground mt-2">
-            Al bloquear, las claves privadas se eliminarán de la memoria
+            {t('keyring.lockNote')}
           </p>
         </CardContent>
       </Card>
@@ -132,17 +134,17 @@ export function KeyringUnlock() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Lock className="h-5 w-5" />
-            Estado del Keyring
+            {t('keyring.status')}
           </CardTitle>
           <CardDescription>
-            No hay cuentas almacenadas. Desbloquea el keyring para crear tu primera cuenta
+            {t('keyring.noAccounts')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Input
               type="password"
-              placeholder="Contraseña (cualquiera, para desbloquear y crear tu primera cuenta)"
+              placeholder={t('keyring.passwordAnyPlaceholder')}
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value)
@@ -168,13 +170,12 @@ export function KeyringUnlock() {
             disabled={isLoading || !password.trim()} 
             className="w-full"
           >
-            {isLoading ? 'Desbloqueando...' : 'Desbloquear para Crear Primera Cuenta'}
+            {isLoading ? t('keyring.unlocking') : t('keyring.unlockToCreate')}
           </Button>
 
           <div className="p-3 bg-muted rounded-lg">
             <p className="text-xs text-muted-foreground">
-              <strong>Nota:</strong> Como no hay cuentas almacenadas, puedes usar cualquier contraseña para desbloquear.
-              Esta contraseña se usará para encriptar tu primera cuenta cuando la crees.
+              {t('keyring.noAccountsNote')}
             </p>
           </div>
         </CardContent>
@@ -187,12 +188,12 @@ export function KeyringUnlock() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Lock className="h-5 w-5" />
-          Desbloquear Keyring
+          {t('keyring.unlock')}
         </CardTitle>
         <CardDescription>
           {webauthnCredentials.length > 0 
-            ? 'Usa autenticación biométrica o contraseña para cargar tus cuentas almacenadas'
-            : 'Ingresa tu contraseña para cargar tus cuentas almacenadas'}
+            ? t('keyring.unlockWithBiometric')
+            : t('keyring.unlockWithPasswordDesc')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -200,7 +201,7 @@ export function KeyringUnlock() {
         {webauthnCredentials.length > 0 && (
           <div className="space-y-2">
             <div className="text-sm font-medium text-muted-foreground">
-              Autenticación Biométrica
+              {t('keyring.biometricAuth')}
             </div>
             {webauthnCredentials.map((credential) => (
               <Button
@@ -211,7 +212,7 @@ export function KeyringUnlock() {
                 className="w-full"
               >
                 <Fingerprint className="h-4 w-4 mr-2" />
-                {isWebAuthnLoading ? 'Autenticando...' : `Desbloquear con ${credential.name || 'WebAuthn'}`}
+                {isWebAuthnLoading ? t('keyring.authenticating') : `${t('keyring.unlockWith')} ${credential.name || 'WebAuthn'}`}
               </Button>
             ))}
             
@@ -220,7 +221,7 @@ export function KeyringUnlock() {
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">O</span>
+                <span className="bg-background px-2 text-muted-foreground">{t('keyring.or')}</span>
               </div>
             </div>
           </div>
@@ -229,11 +230,11 @@ export function KeyringUnlock() {
         {/* Opción con contraseña */}
         <div className="space-y-2">
           <div className="text-sm font-medium text-muted-foreground">
-            {webauthnCredentials.length > 0 ? 'Contraseña' : 'Desbloquear con Contraseña'}
+            {webauthnCredentials.length > 0 ? t('keyring.password') : t('keyring.unlockWithPassword')}
           </div>
           <Input
             type="password"
-            placeholder="Contraseña"
+            placeholder={t('keyring.passwordPlaceholder')}
             value={password}
             onChange={(e) => {
               setPassword(e.target.value)
@@ -257,14 +258,13 @@ export function KeyringUnlock() {
             disabled={isLoading || isWebAuthnLoading || !password.trim()} 
             className="w-full"
           >
-            {isLoading ? 'Desbloqueando...' : 'Desbloquear con Contraseña'}
+            {isLoading ? t('keyring.unlocking') : t('keyring.unlockWithPassword')}
           </Button>
         </div>
 
         <div className="p-3 bg-muted rounded-lg">
           <p className="text-xs text-muted-foreground">
-            <strong>Seguridad:</strong> Las claves privadas están encriptadas y almacenadas localmente en IndexedDB.
-            Puedes usar contraseña o autenticación biométrica (WebAuthn) para desbloquear.
+            {t('keyring.securityNote')}
           </p>
         </div>
       </CardContent>

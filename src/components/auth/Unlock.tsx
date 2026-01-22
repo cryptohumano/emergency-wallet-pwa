@@ -5,11 +5,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useKeyringContext } from '@/contexts/KeyringContext'
+import { useI18n } from '@/contexts/I18nContext'
 import { Lock, Fingerprint, Eye, EyeOff, Info, X } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export function Unlock() {
   const { unlock, unlockWithWebAuthn, hasWebAuthnCredentials, accounts: webauthnAccounts } = useKeyringContext()
+  const { t } = useI18n()
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -20,7 +22,7 @@ export function Unlock() {
   const handleUnlock = async () => {
     setError('')
     if (!password) {
-      setError('Por favor ingresa tu contraseña')
+      setError(t('unlock.enterPasswordError'))
       return
     }
 
@@ -28,10 +30,10 @@ export function Unlock() {
     try {
       const success = await unlock(password)
       if (!success) {
-        setError('Contraseña incorrecta. Por favor intenta de nuevo.')
+        setError(t('unlock.wrongPassword'))
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al desbloquear')
+      setError(err instanceof Error ? err.message : t('unlock.unlockError'))
     } finally {
       setLoading(false)
     }
@@ -44,17 +46,17 @@ export function Unlock() {
       // Obtener la primera credencial WebAuthn disponible
       const credentials = await import('@/utils/webauthnStorage').then(m => m.getAllWebAuthnCredentials())
       if (credentials.length === 0) {
-        setError('No hay credenciales WebAuthn configuradas')
+        setError(t('unlock.noWebAuthnCredentials'))
         setLoading(false)
         return
       }
 
       const success = await unlockWithWebAuthn(credentials[0].id)
       if (!success) {
-        setError('Error al autenticar con WebAuthn. Las cuentas pueden estar encriptadas con contraseña. Por favor, intenta desbloquear con contraseña en su lugar.')
+        setError(t('unlock.webauthnError'))
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al desbloquear con WebAuthn')
+      setError(err instanceof Error ? err.message : t('unlock.webauthnUnlockError'))
     } finally {
       setLoading(false)
     }
@@ -69,7 +71,7 @@ export function Unlock() {
           size="icon"
           onClick={() => setShowInfoAlert(!showInfoAlert)}
           className="rounded-full shadow-lg"
-          aria-label="Mostrar información importante"
+          aria-label={t('unlock.showInfo')}
         >
           {showInfoAlert ? (
             <X className="h-4 w-4" />
@@ -84,7 +86,7 @@ export function Unlock() {
         <div className="fixed top-16 right-4 left-4 sm:left-auto sm:max-w-md z-10 animate-in slide-in-from-top-2">
           <Alert className="shadow-2xl">
             <AlertDescription className="text-sm">
-              <strong>Nota:</strong> Si acabas de importar un backup, usa la contraseña que usaste al exportar el backup.
+              <strong>{t('unlock.note')}:</strong> {t('unlock.backupNote')}
             </AlertDescription>
           </Alert>
         </div>
@@ -105,24 +107,24 @@ export function Unlock() {
               <Lock className="h-8 w-8 text-primary" />
             )}
           </div>
-          <CardTitle className="text-2xl">Desbloquear Emergency Wallet</CardTitle>
+          <CardTitle className="text-2xl">{t('unlock.title')}</CardTitle>
           <CardDescription>
-            Ingresa tu contraseña para acceder a tu wallet
-            {hasWebAuthnCredentials && ' o usa WebAuthn'}
+            {t('unlock.description')}
+            {hasWebAuthnCredentials && ` ${t('unlock.webauthn')}`}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="password" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="password">Contraseña</TabsTrigger>
+              <TabsTrigger value="password">{t('unlock.passwordTab')}</TabsTrigger>
               {hasWebAuthnCredentials && (
-                <TabsTrigger value="webauthn">WebAuthn</TabsTrigger>
+                <TabsTrigger value="webauthn">{t('unlock.webauthnTab')}</TabsTrigger>
               )}
             </TabsList>
 
             <TabsContent value="password" className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="password">Contraseña</Label>
+                <Label htmlFor="password">{t('unlock.passwordLabel')}</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -134,7 +136,7 @@ export function Unlock() {
                         handleUnlock()
                       }
                     }}
-                    placeholder="Ingresa tu contraseña"
+                    placeholder={t('unlock.enterPasswordPlaceholder')}
                     className="pr-10"
                   />
                   <Button
@@ -164,7 +166,7 @@ export function Unlock() {
                 className="w-full"
                 disabled={loading || !password}
               >
-                {loading ? 'Desbloqueando...' : 'Desbloquear'}
+                {loading ? t('unlock.unlocking') : t('unlock.unlock')}
               </Button>
             </TabsContent>
 
@@ -173,7 +175,7 @@ export function Unlock() {
                 <div className="text-center py-4">
                   <Fingerprint className="h-12 w-12 mx-auto mb-4 text-primary" />
                   <p className="text-sm text-muted-foreground mb-4">
-                    Usa tu autenticación biométrica o hardware key para desbloquear
+                    {t('unlock.webauthnDescription')}
                   </p>
                 </div>
 
@@ -188,7 +190,7 @@ export function Unlock() {
                   className="w-full"
                   disabled={loading}
                 >
-                  {loading ? 'Autenticando...' : 'Desbloquear con WebAuthn'}
+                  {loading ? t('unlock.authenticating') : t('unlock.webauthn')}
                 </Button>
               </TabsContent>
             )}

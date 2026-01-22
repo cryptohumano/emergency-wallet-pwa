@@ -6,8 +6,10 @@ import { useKeyringContext } from '@/contexts/KeyringContext'
 import { useState } from 'react'
 import Identicon from '@polkadot/react-identicon'
 import { Avatar } from '@/components/ui/avatar'
+import { useI18n } from '@/contexts/I18nContext'
 
 export default function Accounts() {
+  const { t } = useI18n()
   const { accounts } = useKeyringContext()
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null)
 
@@ -24,22 +26,22 @@ export default function Accounts() {
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Cuentas</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">{t('accounts.title')}</h1>
           <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">
-            Gestiona tus cuentas del keyring
+            {t('accounts.yourAccounts')}
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
           <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
             <Link to="/accounts/import">
               <Download className="mr-2 h-4 w-4" />
-              Importar
+              {t('accounts.import')}
             </Link>
           </Button>
           <Button asChild size="sm" className="w-full sm:w-auto">
             <Link to="/accounts/create">
               <Plus className="mr-2 h-4 w-4" />
-              Crear Cuenta
+              {t('accounts.create')}
             </Link>
           </Button>
         </div>
@@ -47,22 +49,22 @@ export default function Accounts() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Tus Cuentas</CardTitle>
+          <CardTitle>{t('accounts.yourAccounts')}</CardTitle>
           <CardDescription>
             {accounts.length > 0 
-              ? `${accounts.length} cuenta${accounts.length > 1 ? 's' : ''} configurada${accounts.length > 1 ? 's' : ''}`
-              : 'Lista de todas tus cuentas configuradas'
+              ? `${accounts.length} ${accounts.length > 1 ? t('accounts.yourAccounts') : t('accounts.yourAccounts')}`
+              : t('accounts.yourAccounts')
             }
           </CardDescription>
         </CardHeader>
         <CardContent>
           {accounts.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              <p className="mb-4">No hay cuentas configuradas aún</p>
+              <p className="mb-4">{t('accounts.noAccounts')}</p>
               <Button asChild>
                 <Link to="/accounts/create">
                   <Plus className="mr-2 h-4 w-4" />
-                  Crear Primera Cuenta
+                  {t('accounts.createFirst')}
                 </Link>
               </Button>
             </div>
@@ -84,7 +86,7 @@ export default function Accounts() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-semibold truncate">
-                          {account.meta.name || 'Sin nombre'}
+                          {account.meta.name || t('accounts.noName')}
                         </h3>
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
@@ -96,7 +98,7 @@ export default function Accounts() {
                           size="sm"
                           className="h-6 w-6 p-0 flex-shrink-0"
                           onClick={() => handleCopyAddress(account.address)}
-                          title="Copiar dirección"
+                          title={t('accounts.copyAddress')}
                         >
                           {copiedAddress === account.address ? (
                             <Check className="h-3 w-3 text-green-500" />
@@ -123,8 +125,8 @@ export default function Accounts() {
                     <Button asChild variant="outline" size="sm" className="text-xs sm:text-sm w-full sm:w-auto">
                       <Link to={`/accounts/${account.address}`}>
                         <ExternalLink className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                        <span className="hidden sm:inline">Ver Detalles</span>
-                        <span className="sm:hidden">Detalles</span>
+                        <span className="hidden sm:inline">{t('accounts.viewDetails')}</span>
+                        <span className="sm:hidden">{t('accounts.viewDetails').split(' ')[1]}</span>
                       </Link>
                     </Button>
                   </div>

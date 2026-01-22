@@ -10,11 +10,12 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useEmergency } from '@/hooks/useEmergency'
 import { Badge } from '@/components/ui/badge'
 import { formatDistanceToNow } from 'date-fns'
-import { es } from 'date-fns/locale/es'
+import { es, enUS } from 'date-fns/locale'
 import { lazy, Suspense } from 'react'
 import { Loader2 } from 'lucide-react'
 import { FAB } from '@/components/ui/fab'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { useI18n } from '@/contexts/I18nContext'
 
 // Lazy load del monitor para mejorar LCP - es un componente pesado
 const BlockchainRadioMonitor = lazy(() => import('@/components/BlockchainRadioMonitor').then(module => ({ default: module.BlockchainRadioMonitor })))
@@ -23,6 +24,7 @@ export default function Home() {
   const navigate = useNavigate()
   const isMobile = useIsMobile()
   const { emergencies } = useEmergency()
+  const { t, language } = useI18n()
 
   // Obtener emergencias activas
   const getActiveEmergencies = () => {
@@ -55,14 +57,14 @@ export default function Home() {
       {/* Emergencias Activas */}
       <Card className="card-elevated fade-in">
         <CardHeader>
-          <CardTitle>Emergencias Activas</CardTitle>
+          <CardTitle>{t('home.activeEmergencies')}</CardTitle>
           <CardDescription>
-            {activeEmergencies.length} emergencia(s) activa(s)
+            {activeEmergencies.length} {t('home.activeCount')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {activeEmergencies.length === 0 ? (
-            <p className="text-muted-foreground">No hay emergencias activas</p>
+            <p className="text-muted-foreground">{t('home.noEmergencies')}</p>
           ) : (
             <div className="space-y-2">
               {activeEmergencies.slice(0, 5).map((emergency) => (
@@ -91,12 +93,10 @@ export default function Home() {
                                 emergency.severity === 'high' ? 'severity-high' : ''
                               }`}
                             >
-                              {emergency.severity === 'critical' ? 'CRÍTICA' :
-                               emergency.severity === 'high' ? 'ALTA' :
-                               emergency.severity === 'medium' ? 'MEDIA' : 'BAJA'}
+                              {t(`emergencies.severityLabels.${emergency.severity}`)}
                             </Badge>
                             <Badge variant="outline" className="text-xs">
-                              {emergency.type}
+                              {t(`emergencies.types.${emergency.type}`) || emergency.type}
                             </Badge>
                           </div>
                           <p className="text-sm font-medium mt-1 line-clamp-2">
@@ -105,7 +105,7 @@ export default function Home() {
                           <p className="text-xs text-muted-foreground mt-2">
                             {formatDistanceToNow(emergency.createdAt, {
                               addSuffix: true,
-                              locale: es,
+                              locale: language === 'es' ? es : enUS,
                             })}
                           </p>
                         </div>
@@ -131,7 +131,7 @@ export default function Home() {
         <Button size="lg" variant="destructive" className="w-full" asChild>
           <Link to="/emergencies/create">
             <AlertTriangle className="mr-2 h-5 w-5" />
-            Crear Emergencia
+            {t('emergencies.create')}
           </Link>
         </Button>
       ) : null}
@@ -140,11 +140,11 @@ export default function Home() {
       {isMobile && (
         <FAB
           icon={AlertTriangle}
-          label="Crear Emergencia"
+          label={t('emergencies.create')}
           onClick={() => navigate('/emergencies/create')}
           variant="destructive"
           position="left"
-          aria-label="Crear nueva emergencia"
+          aria-label={t('emergencies.create')}
         />
       )}
     </div>

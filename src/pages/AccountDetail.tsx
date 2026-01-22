@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useKeyringContext } from '@/contexts/KeyringContext'
 import { useMultiChainBalances } from '@/hooks/useMultiChainBalances'
+import { useI18n } from '@/contexts/I18nContext'
 import { formatBalanceForDisplay, getChainSymbol } from '@/utils/balance'
 import Identicon from '@polkadot/react-identicon'
 import { Avatar } from '@/components/ui/avatar'
@@ -30,6 +31,7 @@ import type { EncryptedAccount } from '@/utils/secureStorage'
 export default function AccountDetail() {
   const { address } = useParams<{ address: string }>()
   const navigate = useNavigate()
+  const { t, language } = useI18n()
   const { getAccount, removeAccount } = useKeyringContext()
   const [copiedAddress, setCopiedAddress] = useState(false)
   const [accountDetails, setAccountDetails] = useState<EncryptedAccount | null>(null)
@@ -66,7 +68,7 @@ export default function AccountDetail() {
   const handleDeleteAccount = async () => {
     if (!address) return
     
-    if (window.confirm('¿Estás seguro de que deseas eliminar esta cuenta? Esta acción no se puede deshacer.')) {
+    if (window.confirm(t('accounts.deleteConfirm'))) {
       const success = await removeAccount(address)
       if (success) {
         navigate('/accounts')
@@ -78,12 +80,12 @@ export default function AccountDetail() {
     return (
       <div className="space-y-6">
         <Alert variant="destructive">
-          <AlertDescription>Dirección de cuenta no válida</AlertDescription>
+          <AlertDescription>{t('accounts.invalidAddress')}</AlertDescription>
         </Alert>
         <Button asChild variant="outline">
           <Link to="/accounts">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Volver a Cuentas
+            {t('accounts.backToAccounts')}
           </Link>
         </Button>
       </div>
@@ -94,12 +96,12 @@ export default function AccountDetail() {
     return (
       <div className="space-y-6">
         <Alert variant="destructive">
-          <AlertDescription>Cuenta no encontrada</AlertDescription>
+          <AlertDescription>{t('accounts.notFound')}</AlertDescription>
         </Alert>
         <Button asChild variant="outline">
           <Link to="/accounts">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Volver a Cuentas
+            {t('accounts.backToAccounts')}
           </Link>
         </Button>
       </div>
@@ -118,7 +120,7 @@ export default function AccountDetail() {
           <Button asChild variant="ghost" size="sm" className="flex-shrink-0">
             <Link to="/accounts">
               <ArrowLeft className="mr-1 sm:mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">Volver</span>
+              <span className="hidden sm:inline">{t('common.back')}</span>
             </Link>
           </Button>
           <div className="flex-1 min-w-0">
@@ -132,12 +134,12 @@ export default function AccountDetail() {
           <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
             <Link to={`/send?from=${address}`}>
               <Send className="mr-2 h-4 w-4" />
-              Enviar
+              {t('accounts.send')}
             </Link>
           </Button>
           <Button variant="destructive" size="sm" onClick={handleDeleteAccount} className="w-full sm:w-auto">
             <Trash2 className="mr-2 h-4 w-4" />
-            Eliminar
+            {t('accounts.delete')}
           </Button>
         </div>
       </div>
@@ -163,7 +165,7 @@ export default function AccountDetail() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-2">
                 <h2 className="text-xl font-semibold">
-                  {account.meta.name || 'Sin nombre'}
+                  {account.meta.name || t('accounts.noName')}
                 </h2>
                 {accountDetails && (
                   <Badge variant="outline">
@@ -180,7 +182,7 @@ export default function AccountDetail() {
                   size="sm"
                   className="h-8 w-8 p-0"
                   onClick={handleCopyAddress}
-                  title="Copiar dirección"
+                  title={t('accounts.copyAddress')}
                 >
                   {copiedAddress ? (
                     <Check className="h-4 w-4 text-green-500" />
@@ -201,7 +203,7 @@ export default function AccountDetail() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Key className="h-4 w-4" />
-                    <span>Tipo de Criptografía</span>
+                    <span>{t('accounts.cryptoType')}</span>
                   </div>
                   <p className="font-medium">{accountDetails.type || 'sr25519'}</p>
                 </div>
@@ -209,11 +211,11 @@ export default function AccountDetail() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4" />
-                    <span>Fecha de Creación</span>
+                    <span>{t('accounts.creationDate')}</span>
                   </div>
                   <p className="font-medium">
                     {accountDetails.createdAt 
-                      ? new Date(accountDetails.createdAt).toLocaleString('es-ES')
+                      ? new Date(accountDetails.createdAt).toLocaleString(language === 'es' ? 'es-ES' : 'en-US')
                       : 'N/A'}
                   </p>
                 </div>
@@ -222,10 +224,10 @@ export default function AccountDetail() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Calendar className="h-4 w-4" />
-                      <span>Última Actualización</span>
+                      <span>{t('accounts.lastUpdate')}</span>
                     </div>
                     <p className="font-medium">
-                      {new Date(accountDetails.updatedAt).toLocaleString('es-ES')}
+                      {new Date(accountDetails.updatedAt).toLocaleString(language === 'es' ? 'es-ES' : 'en-US')}
                     </p>
                   </div>
                 )}
@@ -233,7 +235,7 @@ export default function AccountDetail() {
                 {accountDetails.meta?.tags && accountDetails.meta.tags.length > 0 && (
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>Etiquetas</span>
+                      <span>{t('accounts.tags')}</span>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {accountDetails.meta.tags.map((tag: string) => (
@@ -250,7 +252,7 @@ export default function AccountDetail() {
             {account.meta.notes && (
               <div className="space-y-2 md:col-span-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>Notas</span>
+                  <span>{t('accounts.notes')}</span>
                 </div>
                 <p className="text-sm">{account.meta.notes}</p>
               </div>
@@ -293,12 +295,12 @@ export default function AccountDetail() {
           {isLoadingBalances ? (
             <div className="text-center py-8 text-muted-foreground">
               <RefreshCw className="h-8 w-8 mx-auto mb-2 animate-spin" />
-              <p>Cargando balances...</p>
+              <p>{t('accounts.loadingBalances')}</p>
             </div>
           ) : balances.length === 0 ? (
             <Alert>
               <AlertDescription>
-                No se encontraron balances. Asegúrate de estar conectado a las redes.
+                {t('accounts.noBalances')}
               </AlertDescription>
             </Alert>
           ) : (
@@ -307,7 +309,7 @@ export default function AccountDetail() {
               <div className="p-3 sm:p-4 bg-primary/10 rounded-lg border-2 border-primary/20">
                 <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs sm:text-sm text-muted-foreground">Balance Total (Todas las Cadenas)</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">{t('accounts.totalBalance')}</p>
                     <p className="text-lg sm:text-xl md:text-2xl font-bold mt-1 break-words">
                       {formatBalanceForDisplay(totalBalance, primaryChain)}
                     </p>
@@ -331,20 +333,20 @@ export default function AccountDetail() {
                     <CardContent className="space-y-2">
                       <div className="space-y-1.5">
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Libre:</span>
+                          <span className="text-muted-foreground">{t('accounts.free')}:</span>
                           <span className="font-medium">
                             {formatBalanceForDisplay(balance.free, balance.chainName)}
                           </span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Reservado:</span>
+                          <span className="text-muted-foreground">{t('accounts.reserved')}:</span>
                           <span>
                             {formatBalanceForDisplay(balance.reserved, balance.chainName)}
                           </span>
                         </div>
                         {balance.frozen > 0 && (
                           <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Congelado:</span>
+                            <span className="text-muted-foreground">{t('accounts.frozen')}:</span>
                             <span>
                               {formatBalanceForDisplay(balance.frozen, balance.chainName)}
                             </span>
@@ -352,14 +354,14 @@ export default function AccountDetail() {
                         )}
                         <Separator className="my-2" />
                         <div className="flex justify-between">
-                          <span className="font-medium">Total:</span>
+                          <span className="font-medium">{t('accounts.total')}:</span>
                           <span className="font-bold">
                             {formatBalanceForDisplay(balance.total, balance.chainName)}
                           </span>
                         </div>
                         {balance.nonce !== undefined && (
                           <div className="flex justify-between text-xs text-muted-foreground pt-1">
-                            <span>Nonce:</span>
+                            <span>{t('accounts.nonce')}:</span>
                             <span>{balance.nonce}</span>
                           </div>
                         )}
@@ -376,32 +378,32 @@ export default function AccountDetail() {
       {/* Acciones Rápidas */}
       <Card>
         <CardHeader>
-          <CardTitle>Acciones Rápidas</CardTitle>
+          <CardTitle>{t('accounts.quickActions')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
             <Button asChild variant="outline" size="sm" className="w-full">
               <Link to={`/send?from=${address}`}>
                 <Send className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="text-xs sm:text-sm">Enviar</span>
+                <span className="text-xs sm:text-sm">{t('accounts.send')}</span>
               </Link>
             </Button>
             <Button asChild variant="outline" size="sm" className="w-full">
               <Link to={`/receive?address=${address}`}>
                 <Download className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="text-xs sm:text-sm">Recibir</span>
+                <span className="text-xs sm:text-sm">{t('accounts.receive')}</span>
               </Link>
             </Button>
             <Button asChild variant="outline" size="sm" className="w-full">
               <Link to={`/identity?address=${address}`}>
                 <Shield className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="text-xs sm:text-sm">Identidad</span>
+                <span className="text-xs sm:text-sm">{t('accounts.identity')}</span>
               </Link>
             </Button>
             <Button asChild variant="outline" size="sm" className="w-full">
               <Link to={`/transactions?account=${address}`}>
                 <ExternalLink className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="text-xs sm:text-sm">Transacciones</span>
+                <span className="text-xs sm:text-sm">{t('nav.transactions')}</span>
               </Link>
             </Button>
           </div>

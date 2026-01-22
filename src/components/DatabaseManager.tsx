@@ -17,8 +17,10 @@ import { Trash2, Database, AlertTriangle, CheckCircle, Info } from 'lucide-react
 import { deleteAllAppData, getStorageInfo } from '@/utils/dataCleanup'
 import { useNavigate } from 'react-router-dom'
 import { useKeyringContext } from '@/contexts/KeyringContext'
+import { useI18n } from '@/contexts/I18nContext'
 
 export function DatabaseManager() {
+  const { t, language } = useI18n()
   const navigate = useNavigate()
   const { lock } = useKeyringContext()
   const [storageInfo, setStorageInfo] = useState<{
@@ -34,7 +36,7 @@ export function DatabaseManager() {
   const [confirmText, setConfirmText] = useState('')
   const [isRefreshing, setIsRefreshing] = useState(false)
 
-  const CONFIRM_TEXT = 'ELIMINAR TODO'
+  const CONFIRM_TEXT = language === 'es' ? 'ELIMINAR TODO' : 'DELETE ALL'
 
   const loadStorageInfo = async () => {
     setIsRefreshing(true)
@@ -42,7 +44,7 @@ export function DatabaseManager() {
       const info = await getStorageInfo()
       setStorageInfo(info)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al cargar información')
+      setError(err instanceof Error ? err.message : t('database.loadError'))
     } finally {
       setIsRefreshing(false)
     }
@@ -54,7 +56,7 @@ export function DatabaseManager() {
 
   const handleDeleteAll = async () => {
     if (confirmText !== CONFIRM_TEXT) {
-      setError(`Por favor escribe "${CONFIRM_TEXT}" para confirmar`)
+      setError(t('database.confirmError').replace('{text}', CONFIRM_TEXT))
       return
     }
 
@@ -69,7 +71,7 @@ export function DatabaseManager() {
       // Eliminar todos los datos
       await deleteAllAppData()
 
-      setSuccess('Todos los datos han sido eliminados exitosamente')
+      setSuccess(t('database.deleteSuccess'))
       setIsDialogOpen(false)
       setConfirmText('')
 
@@ -78,7 +80,7 @@ export function DatabaseManager() {
         window.location.href = '/'
       }, 2000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al eliminar los datos')
+      setError(err instanceof Error ? err.message : t('database.deleteError'))
     } finally {
       setIsDeleting(false)
     }
@@ -93,13 +95,13 @@ export function DatabaseManager() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Datos Almacenados</h3>
+          <h3 className="text-lg font-semibold">{t('database.title')}</h3>
           <p className="text-sm text-muted-foreground">
-            Información sobre los datos almacenados localmente
+            {t('database.description')}
           </p>
         </div>
         <Button variant="outline" onClick={loadStorageInfo} disabled={isRefreshing}>
-          {isRefreshing ? 'Actualizando...' : 'Actualizar'}
+          {isRefreshing ? t('database.updating') : t('database.refresh')}
         </Button>
       </div>
 
@@ -125,7 +127,7 @@ export function DatabaseManager() {
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Database className="h-4 w-4" />
-                  Bases de Datos IndexedDB ({storageInfo.databases.length})
+                  {t('database.databases')} ({storageInfo.databases.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -134,7 +136,7 @@ export function DatabaseManager() {
                     <div key={index} className="flex items-center justify-between p-2 border rounded">
                       <div>
                         <p className="text-sm font-medium">{db.name}</p>
-                        <p className="text-xs text-muted-foreground">Versión: {db.version}</p>
+                        <p className="text-xs text-muted-foreground">{t('database.version')}: {db.version}</p>
                       </div>
                     </div>
                   ))}
@@ -183,7 +185,7 @@ export function DatabaseManager() {
             <Alert>
               <Info className="h-4 w-4" />
               <AlertDescription>
-                No hay datos almacenados localmente
+                {t('database.noData')}
               </AlertDescription>
             </Alert>
           )}
@@ -195,27 +197,27 @@ export function DatabaseManager() {
         <CardHeader>
           <CardTitle className="text-destructive flex items-center gap-2">
             <AlertTriangle className="h-5 w-5" />
-            Zona de Peligro
+            {t('database.dangerZone')}
           </CardTitle>
           <CardDescription>
-            Eliminar todos los datos almacenados localmente. Esta acción es IRREVERSIBLE.
+            {t('database.dangerDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              <strong>Advertencia:</strong> Esta acción eliminará:
+              <strong>{t('database.warning')}:</strong> {t('database.warningDesc')}
               <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>Todas tus cuentas y claves privadas</li>
-                <li>Todas las credenciales WebAuthn</li>
-                <li>Todos los contactos</li>
-                <li>Todas las configuraciones de APIs</li>
-                <li>Todos los datos almacenados en IndexedDB</li>
-                <li>Todos los datos en localStorage y sessionStorage</li>
+                <li>{t('database.warningList1')}</li>
+                <li>{t('database.warningList2')}</li>
+                <li>{t('database.warningList3')}</li>
+                <li>{t('database.warningList4')}</li>
+                <li>{t('database.warningList5')}</li>
+                <li>{t('database.warningList6')}</li>
               </ul>
               <p className="mt-2">
-                <strong>No podrás recuperar estos datos a menos que tengas tus frases de recuperación (mnemonic).</strong>
+                <strong>{t('database.warningRecovery')}</strong>
               </p>
             </AlertDescription>
           </Alert>
@@ -224,28 +226,27 @@ export function DatabaseManager() {
             <DialogTrigger asChild>
               <Button variant="destructive" className="w-full">
                 <Trash2 className="mr-2 h-4 w-4" />
-                Eliminar Todos los Datos
+                {t('database.deleteAll')}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-lg max-h-[90vh] sm:max-h-[85vh] overflow-y-auto mx-4 sm:mx-0">
               <DialogHeader>
-                <DialogTitle className="text-destructive">Confirmar Eliminación</DialogTitle>
+                <DialogTitle className="text-destructive">{t('database.confirmTitle')}</DialogTitle>
                 <DialogDescription>
-                  Esta acción es IRREVERSIBLE. Todos tus datos serán eliminados permanentemente.
+                  {t('database.confirmDesc')}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <Alert variant="destructive">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>
-                    <strong>Última advertencia:</strong> Esta acción eliminará todos tus datos
-                    y te redirigirá al onboarding. Solo hazlo si estás seguro.
+                    <strong>{t('database.lastWarning')}</strong>
                   </AlertDescription>
                 </Alert>
 
                 <div className="space-y-2">
                   <Label htmlFor="confirm">
-                    Escribe <strong>{CONFIRM_TEXT}</strong> para confirmar:
+                    {t('database.confirmLabel').replace('{text}', CONFIRM_TEXT)}
                   </Label>
                   <Input
                     id="confirm"
@@ -266,7 +267,7 @@ export function DatabaseManager() {
                   }}
                   disabled={isDeleting}
                 >
-                  Cancelar
+                  {t('database.cancel')}
                 </Button>
                 <Button
                   variant="destructive"
@@ -276,12 +277,12 @@ export function DatabaseManager() {
                   {isDeleting ? (
                     <>
                       <Trash2 className="mr-2 h-4 w-4 animate-spin" />
-                      Eliminando...
+                      {t('database.deleting')}
                     </>
                   ) : (
                     <>
                       <Trash2 className="mr-2 h-4 w-4" />
-                      Eliminar Todo
+                      {t('database.deleteAllButton')}
                     </>
                   )}
                 </Button>
