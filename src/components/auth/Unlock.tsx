@@ -18,6 +18,8 @@ export function Unlock() {
   const [showPassword, setShowPassword] = useState(false)
   const [showInfoAlert, setShowInfoAlert] = useState(false)
   const [logoError, setLogoError] = useState(false)
+  // Usar BASE_URL de Vite para rutas correctas en producción (GitHub Pages)
+  const logoPath = `${import.meta.env.BASE_URL}web-app-manifest-192x192.png`
 
   const handleUnlock = async () => {
     setError('')
@@ -98,7 +100,7 @@ export function Unlock() {
           <div className="mx-auto mb-4 w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
             {!logoError ? (
               <img 
-                src="/web-app-manifest-192x192.png" 
+                src={logoPath}
                 alt="Emergency Wallet Logo" 
                 className="w-full h-full object-cover"
                 onError={() => setLogoError(true)}

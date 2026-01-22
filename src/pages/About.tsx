@@ -36,7 +36,7 @@ export default function About() {
           <div className="flex items-center gap-3">
             <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
               <img 
-                src="/web-app-manifest-192x192.png" 
+                src={`${import.meta.env.BASE_URL}web-app-manifest-192x192.png`}
                 alt="Emergency Wallet Logo" 
                 className="w-full h-full object-cover"
               />

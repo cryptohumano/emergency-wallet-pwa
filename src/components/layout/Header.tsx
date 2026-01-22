@@ -45,6 +45,8 @@ function LogoutButton() {
 export function Header() {
   const context = useContext(NetworkContext)
   const [logoError, setLogoError] = useState(false)
+  // Usar BASE_URL de Vite para rutas correctas en producción (GitHub Pages)
+  const logoPath = `${import.meta.env.BASE_URL}web-app-manifest-192x192.png`
 
   if (!context) {
     return (
@@ -56,7 +58,7 @@ export function Header() {
                 <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
                   {!logoError ? (
                     <img 
-                      src="/web-app-manifest-192x192.png" 
+                      src={logoPath}
                       alt="Emergency Wallet" 
                       className="w-full h-full object-cover"
                       onError={() => setLogoError(true)}
@@ -92,7 +94,7 @@ export function Header() {
               <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {!logoError ? (
                   <img 
-                    src="/web-app-manifest-192x192.png" 
+                    src={logoPath}
                     alt="Emergency Wallet" 
                     className="w-full h-full object-cover"
                     onError={() => setLogoError(true)}
