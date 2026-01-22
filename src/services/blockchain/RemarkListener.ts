@@ -45,6 +45,8 @@ export class RemarkListener {
   private allEvents: BlockchainEvent[] = [] // Historial de eventos (últimos 50)
   private maxEventsHistory = 50 // Reducido de 100 a 50 para ahorrar memoria
   private memoryCleanupInterval: NodeJS.Timeout | null = null
+  private globalErrorHandler: ((event: ErrorEvent) => void) | null = null
+  private unhandledRejectionHandler: ((event: PromiseRejectionEvent) => void) | null = null
 
   /**
    * Inicia la escucha de eventos System.Remarked
@@ -73,6 +75,86 @@ export class RemarkListener {
     this.client = client
     this.activeAccount = accountAddress
     this.callbacks = callbacks || {}
+
+    // Instalar manejador global de errores para capturar errores internos de dedot
+    this.globalErrorHandler = (event: ErrorEvent) => {
+      const error = event.error || event.message || ''
+      const errorString = String(error)
+      const stack = error instanceof Error ? (error.stack || '') : ''
+      
+      // Detectar errores de dedot relacionados con 'hash' undefined
+      const isDedotHashError = (
+        (errorString.includes('hash') && 
+         (errorString.includes('undefined') || errorString.includes('Cannot read properties'))) ||
+        (stack && stack.includes('hash') && 
+         (stack.includes('undefined') || stack.includes('Cannot read properties'))) ||
+        (stack && stack.includes('#onFollowEvent') && 
+         (errorString.includes('hash') || errorString.includes('undefined')))
+      )
+      
+      // Detectar errores de WsProvider internos
+      const isWsProviderError = (
+        (stack && stack.includes('WsProvider')) ||
+        (stack && stack.includes('_handleNotification')) ||
+        (stack && stack.includes('_onReceiveResponse')) ||
+        (stack && stack.includes('onNewMessage')) ||
+        (stack && stack.includes('dedot.js'))
+      )
+      
+      // Si es un error interno de dedot que debemos ignorar, prevenir su propagación
+      if (isDedotHashError || (isWsProviderError && errorString.includes('hash'))) {
+        event.preventDefault() // Prevenir que el error se muestre en la consola
+        event.stopPropagation()
+        // Solo loguear en modo debug
+        if (process.env.NODE_ENV === 'development') {
+          console.debug('[RemarkListener] ⚠️ Error interno de Dedot interceptado y silenciado:', errorString.substring(0, 100))
+        }
+        return false
+      }
+    }
+    
+    // Instalar manejador para promesas rechazadas no capturadas
+    this.unhandledRejectionHandler = (event: PromiseRejectionEvent) => {
+      const error = event.reason || ''
+      const errorString = String(error)
+      const stack = error instanceof Error ? (error.stack || '') : ''
+      const stackStr = stack || ''
+      
+      // Detectar errores de dedot relacionados con 'hash' undefined
+      const isDedotHashError = (
+        (errorString.includes('hash') && 
+         (errorString.includes('undefined') || errorString.includes('Cannot read properties'))) ||
+        (stackStr.includes('hash') && 
+         (stackStr.includes('undefined') || stackStr.includes('Cannot read properties'))) ||
+        (stackStr.includes('#onFollowEvent') && 
+         (errorString.includes('hash') || errorString.includes('undefined')))
+      )
+      
+      // Detectar errores de WsProvider internos
+      const isWsProviderError = (
+        stackStr.includes('WsProvider') ||
+        stackStr.includes('_handleNotification') ||
+        stackStr.includes('_onReceiveResponse') ||
+        stackStr.includes('onNewMessage') ||
+        stackStr.includes('dedot.js')
+      )
+      
+      // Si es un error interno de dedot que debemos ignorar, prevenir su propagación
+      if (isDedotHashError || (isWsProviderError && errorString.includes('hash'))) {
+        event.preventDefault() // Prevenir que el error se muestre en la consola
+        // Solo loguear en modo debug
+        if (process.env.NODE_ENV === 'development') {
+          console.debug('[RemarkListener] ⚠️ Promesa rechazada de Dedot interceptada y silenciada:', errorString.substring(0, 100))
+        }
+        return false
+      }
+    }
+    
+    // Registrar manejadores globales
+    if (typeof window !== 'undefined' && this.globalErrorHandler && this.unhandledRejectionHandler) {
+      window.addEventListener('error', this.globalErrorHandler, true)
+      window.addEventListener('unhandledrejection', this.unhandledRejectionHandler, true)
+    }
 
     try {
       // Esperar un momento para asegurar que el cliente esté completamente conectado
@@ -1241,6 +1323,18 @@ export class RemarkListener {
   stop(): void {
     // Marcar como detenido PRIMERO para evitar que handleEvents procese más eventos
     this.isListening = false
+    
+    // Eliminar manejadores globales de errores
+    if (typeof window !== 'undefined') {
+      if (this.globalErrorHandler) {
+        window.removeEventListener('error', this.globalErrorHandler, true)
+        this.globalErrorHandler = null
+      }
+      if (this.unhandledRejectionHandler) {
+        window.removeEventListener('unhandledrejection', this.unhandledRejectionHandler, true)
+        this.unhandledRejectionHandler = null
+      }
+    }
     
     // Limpiar intervalo de verificación de conexión
     if (this.connectionCheckInterval) {
