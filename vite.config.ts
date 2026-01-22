@@ -85,6 +85,24 @@ if (process.env.NODE_ENV === 'production' && (!basePath || basePath === '/')) {
   console.warn('[Vite Config] Usando fallback: /emergency-wallet-pwa/')
 }
 
+// Plugin para transformar rutas en index.html durante el build
+const transformHtmlPlugin = () => {
+  return {
+    name: 'transform-html',
+    transformIndexHtml(html: string) {
+      // En producción, reemplazar rutas absolutas con base path
+      if (process.env.NODE_ENV === 'production' && basePath !== '/') {
+        // Reemplazar rutas absolutas de favicons y otros assets estáticos
+        // Nota: Vite transforma automáticamente src="/src/main.tsx" a los archivos compilados
+        // Solo necesitamos ajustar las rutas de assets estáticos
+        return html
+          .replace(/href="\/(favicon|apple-touch-icon)/g, `href="${basePath}$1`)
+      }
+      return html
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   base: basePath,
@@ -99,6 +117,7 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    transformHtmlPlugin(),
       VitePWA({
       registerType: 'autoUpdate',
       includeAssets: [
